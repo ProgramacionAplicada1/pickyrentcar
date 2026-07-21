@@ -42,3 +42,5 @@ next-env.d.ts
 pnpm-lock.yaml
 pnpm-workspace.yaml
 /.agents
+
+package-lock.json
