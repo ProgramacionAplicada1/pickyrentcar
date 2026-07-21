@@ -4,7 +4,11 @@ import * as React from "react"
 import { GoogleIcon } from "@/components/icons/google-icon"
 import { createClient } from "@/lib/supabase/client"
 
-export function GoogleSignInButton() {
+export function GoogleSignInButton({
+  mode = "signup",
+}: {
+  mode?: "signin" | "signup"
+}) {
   const [isPending, setIsPending] = React.useState(false)
   const [error, setError] = React.useState<string | null>(null)
 
@@ -26,6 +30,11 @@ export function GoogleSignInButton() {
     }
   }
 
+  const label =
+    mode === "signin"
+      ? "Iniciar sesión con Google"
+      : "Registrarse con Google"
+
   return (
     <div className="flex flex-col gap-2">
       <button
@@ -35,7 +44,7 @@ export function GoogleSignInButton() {
         className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-full border border-input bg-input/30 px-4 text-sm font-medium text-foreground transition-colors hover:bg-input/50 disabled:pointer-events-none disabled:opacity-50"
       >
         <GoogleIcon className="size-[18px]" />
-        <span>Registrarse con Google</span>
+        <span>{label}</span>
       </button>
       {error && (
         <p className="text-center text-xs text-destructive">{error}</p>

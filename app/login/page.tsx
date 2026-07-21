@@ -1,15 +1,26 @@
-import type { Metadata } from "next";
-import Image from "next/image";
+import type { Metadata } from "next"
+import Image from "next/image"
+import { redirect } from "next/navigation"
 
-import { Card, CardContent } from "@/components/ui/card";
-import { LoginForm } from "@/components/login-form";
+import { Card, CardContent } from "@/components/ui/card"
+import { LoginForm } from "@/components/login-form"
+import { createClient } from "@/lib/supabase/server"
 
 export const metadata: Metadata = {
   title: "Iniciar sesión · PickyRentCar",
   description: "Accede al panel de administración de PickyRentCar.",
-};
+}
 
-export default function LoginPage() {
+export default async function LoginPage() {
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  if (user) {
+    redirect("/dashboard")
+  }
+
   return (
     <div className="flex min-h-full flex-1 flex-col items-center justify-center bg-zinc-50 px-4 py-6 sm:py-8">
       <div className="flex w-full max-w-md flex-col gap-4">
@@ -50,5 +61,5 @@ export default function LoginPage() {
         </Card>
       </div>
     </div>
-  );
+  )
 }
