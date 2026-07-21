@@ -1,31 +1,33 @@
-import Sidebar from "@/components/Sidebar";
+import { redirect } from "next/navigation"
 
+import { createClient } from "@/lib/supabase/server"
+import { AppSidebar } from "@/components/app-sidebar"
+import { SiteHeader } from "@/components/site-header"
+import { SidebarToggleProvider } from "@/components/sidebar-toggle-context"
 
-export default function Layout({
-    children,
-}:{
-    children: React.ReactNode;
-}){
+export default async function DashboardLayout({
+  children,
+}: {
+  children: React.ReactNode
+}) {
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
 
-    return(
+  if (!user) {
+    redirect("/login")
+  }
 
-        <div className="flex h-screen bg-gray-100">
-
-            <Sidebar/>
-
-            <div className="flex-1 flex flex-col">
-
-
-                <main className="flex-1 overflow-y-auto p-8">
-
-                    {children}
-
-                </main>
-
-            </div>
-
-        </div>
-
-    );
-
+  return (
+    <SidebarToggleProvider>
+      <div className="flex min-h-svh w-full">
+        <AppSidebar />
+        <main className="flex flex-1 flex-col overflow-y-auto bg-muted/30">
+          <SiteHeader />
+          {children}
+        </main>
+      </div>
+    </SidebarToggleProvider>
+  )
 }

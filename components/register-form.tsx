@@ -11,7 +11,6 @@ import {
   EyeIcon,
   EyeOffIcon,
   AlertCircleIcon,
-  RefreshIcon,
 } from "@hugeicons/core-free-icons"
 
 import { cn } from "@/lib/utils"
@@ -222,7 +221,7 @@ export function RegisterForm() {
         id="confirmPassword"
         label="Confirmar contraseña"
         error={errors.confirmPassword}
-        icon={<HugeiconsIcon icon={RefreshIcon} strokeWidth={1.5} />}
+        icon={<HugeiconsIcon icon={LockIcon} strokeWidth={1.5} />}
         rightAction={
           <PasswordToggle
             visible={showConfirmPassword}

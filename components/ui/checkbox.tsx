@@ -21,9 +21,7 @@ function Checkbox({
       {...props}
     >
       <CheckboxPrimitive.Indicator
-        render={
-          <span className="flex items-center justify-center text-current" />
-        }
+        className="flex items-center justify-center text-current data-[unchecked]:hidden"
         keepMounted
       >
         <HugeiconsIcon icon={Tick02Icon} strokeWidth={3} />
