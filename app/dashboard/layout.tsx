@@ -1,0 +1,31 @@
+import { redirect } from "next/navigation"
+
+import { createClient } from "@/lib/supabase/server"
+import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar"
+import { AppSidebar } from "@/components/app-sidebar"
+import { SiteHeader } from "@/components/site-header"
+
+export default async function DashboardLayout({
+  children,
+}: {
+  children: React.ReactNode
+}) {
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  if (!user) {
+    redirect("/login")
+  }
+
+  return (
+    <SidebarProvider>
+      <AppSidebar />
+      <SidebarInset>
+        <SiteHeader />
+        {children}
+      </SidebarInset>
+    </SidebarProvider>
+  )
+}
