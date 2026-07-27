@@ -27,15 +27,7 @@ export default function ReservationHeader({
         </div>
       </div>
 
-      <button
-        type="button"
-        onClick={onNewReservation}
-        className="inline-flex items-center justify-center gap-2 rounded-2xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-slate-900/15 transition-all duration-300 hover:-translate-y-0.5 hover:bg-slate-800 hover:shadow-xl disabled:cursor-not-allowed disabled:opacity-70"
-        disabled={!onNewReservation}
-      >
-        <FaPlus className="text-sm" />
-        Nueva reserva
-      </button>
+    
     </section>
   );
 }

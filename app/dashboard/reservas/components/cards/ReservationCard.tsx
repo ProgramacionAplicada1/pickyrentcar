@@ -11,6 +11,8 @@ import ReservationActions from "./ReservationActions";
 
 interface ReservationCardProps {
   reservation: Reservation;
+  onView?: (reservation: Reservation) => void;
+  onEdit?: (reservation: Reservation) => void;
 }
 
 const borderColors = {
@@ -22,6 +24,8 @@ const borderColors = {
 
 export default function ReservationCard({
   reservation,
+  onView,
+  onEdit,
 }: ReservationCardProps) {
   return (
     <article
@@ -127,7 +131,14 @@ export default function ReservationCard({
 
         </div>
 
-        <ReservationActions />
+        <ReservationActions
+          onView={() => onView?.(reservation)}
+          onEdit={() => onEdit?.(reservation)}
+          onPrint={() => window.print()}
+          onMore={() =>
+            alert(`Más opciones para ${reservation.numeroReserva}`)
+          }
+        />
 
       </div>
 
