@@ -11,6 +11,7 @@ export default async function DashboardLayout({
   children: React.ReactNode
 }) {
   const supabase = await createClient()
+
   const {
     data: { user },
   } = await supabase.auth.getUser()
@@ -21,11 +22,15 @@ export default async function DashboardLayout({
 
   return (
     <SidebarToggleProvider>
-      <div className="flex min-h-svh w-full">
+      <div className="flex h-svh w-full overflow-hidden">
         <AppSidebar />
-        <main className="flex flex-1 flex-col overflow-y-auto bg-muted/30">
+
+        <main className="flex min-w-0 flex-1 flex-col overflow-hidden bg-muted/30">
           <SiteHeader />
-          {children}
+
+          <div className="min-h-0 flex-1 overflow-y-auto">
+            {children}
+          </div>
         </main>
       </div>
     </SidebarToggleProvider>
