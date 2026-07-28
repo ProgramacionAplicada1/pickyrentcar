@@ -1,5 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
+import { FaInstagram, FaTiktok } from "react-icons/fa";
 
 function LandingPage() {
 
@@ -9,7 +10,7 @@ function LandingPage() {
         <div className="flex items-center justify-between px-6 py-3">
           <div className="flex items-center gap-4">
             <Image
-              src="/logo-prototipo-3.svg"
+              src="/PickyLogo.svg"
               alt="PickyRentCar"
               width={70}
               height={70}
@@ -104,10 +105,13 @@ function LandingPage() {
             </div>
 
             <div>
-              <h3 className="font-semibold text-white">Siguenos</h3>
-              <p className="mt-4 text-sm text-gray-400">Instagram</p>
-              <p className="mt-2 text-sm text-gray-400">TikTok</p>
-            </div>
+  <h3 className="font-semibold text-white">Siguenos</h3>
+
+  <div className="mt-4 flex gap-4">
+    <FaInstagram size={28} />
+    <FaTiktok size={28} />
+  </div>
+</div>
           </div>
         </div>
       </footer>
