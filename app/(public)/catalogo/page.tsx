@@ -1,6 +1,10 @@
 import Link from "next/link"
 import { HugeiconsIcon } from "@hugeicons/react"
-import { Calendar01Icon, Car01Icon, Search01Icon } from "@hugeicons/core-free-icons"
+import {
+  Calendar01Icon,
+  Car01Icon,
+  Search01Icon,
+} from "@hugeicons/core-free-icons"
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -54,7 +58,7 @@ export default async function CatalogoPage({ searchParams }: Props) {
     : allVehicles
 
   return (
-    <div className="flex flex-1 flex-col">
+    <div className="relative flex flex-1 flex-col">
       <section className="border-b bg-muted/30">
         <div className="mx-auto flex max-w-7xl flex-col gap-3 px-4 py-10 sm:px-6 sm:py-14">
           <p className="text-sm font-medium tracking-wide text-muted-foreground uppercase">

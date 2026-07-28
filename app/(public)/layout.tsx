@@ -3,7 +3,8 @@ import Image from "next/image"
 
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
-import { createClient } from "@/lib/supabase/server"
+import { PublicLogoutButton } from "@/components/public-logout-button"
+import { getCurrentUser } from "@/services/auth"
 
 export const metadata = {
   title: "Catálogo · PickyRentCar",
@@ -15,18 +16,16 @@ export default async function PublicLayout({
 }: {
   children: React.ReactNode
 }) {
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const user = await getCurrentUser()
   const isAuthenticated = Boolean(user)
+  const isAdmin = user?.role === "admin"
 
   return (
     <div className="flex min-h-svh flex-col bg-background">
       <header className="sticky top-0 z-40 border-b bg-background/80 backdrop-blur">
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6">
           <Link
-            href="/catalogo"
+            href="/landing-page"
             className="flex items-center gap-2.5"
             aria-label="PickyRentCar inicio"
           >
@@ -49,7 +48,17 @@ export default async function PublicLayout({
             >
               Vehículos
             </Link>
-            {isAuthenticated ? (
+            {!isAuthenticated ? (
+              <Button
+                variant="outline"
+                size="sm"
+                className="rounded-full"
+                nativeButton={false}
+                render={<Link href="/login" />}
+              >
+                Iniciar sesión
+              </Button>
+            ) : isAdmin ? (
               <Button
                 variant="default"
                 size="sm"
@@ -60,15 +69,7 @@ export default async function PublicLayout({
                 Ir al panel
               </Button>
             ) : (
-              <Button
-                variant="outline"
-                size="sm"
-                className="rounded-full"
-                nativeButton={false}
-                render={<Link href="/login" />}
-              >
-                Iniciar sesión
-              </Button>
+              <PublicLogoutButton />
             )}
           </div>
         </div>

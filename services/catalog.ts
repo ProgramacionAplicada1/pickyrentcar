@@ -62,21 +62,16 @@ function normalizeImageUrls(value: unknown): string[] {
 }
 
 // ============================================================================
-// Queries
+// Queries (via RPCs SECURITY DEFINER — bypass RLS sin service_role)
 // ============================================================================
 
 export async function listPublicVehicles(): Promise<PublicVehicleListItem[]> {
   const supabase = await createClient()
-  const { data } = await supabase
-    .from("vehicles")
-    .select(
-      "id, nombre, plate, brand, model, year, status, transmission, fuel_type, category, daily_price, image_urls",
-    )
-    .neq("status", "maintenance")
-    .order("created_at", { ascending: false })
+  const { data, error } = await supabase.rpc("get_public_vehicles")
+  if (error) return []
 
-  return (data ?? []).map((row) => ({
-    ...(row as Omit<PublicVehicleListItem, "image_urls">),
+  return (data ?? []).map((row: Omit<PublicVehicleListItem, "image_urls">) => ({
+    ...row,
     image_urls: normalizeImageUrls(
       (row as { image_urls?: unknown }).image_urls,
     ),
@@ -87,21 +82,15 @@ export async function getPublicVehicleById(
   id: string,
 ): Promise<PublicVehicleDetail | null> {
   const supabase = await createClient()
-  const { data } = await supabase
-    .from("vehicles")
-    .select(
-      "id, nombre, plate, brand, model, year, color, seats, status, transmission, fuel_type, category, daily_price, image_urls",
-    )
-    .eq("id", id)
-    .maybeSingle()
+  const { data, error } = await supabase.rpc("get_public_vehicle_by_id", {
+    p_id: id,
+  })
+  if (error || !data || !Array.isArray(data) || data.length === 0) return null
 
-  if (!data) return null
-
+  const row = (data as PublicVehicleDetail[])[0]
   return {
-    ...(data as Omit<PublicVehicleDetail, "image_urls">),
-    image_urls: normalizeImageUrls(
-      (data as { image_urls?: unknown }).image_urls,
-    ),
+    ...row,
+    image_urls: normalizeImageUrls(row.image_urls),
   }
 }
 
@@ -109,13 +98,13 @@ export async function getVehicleReservedRanges(
   vehicleId: string,
 ): Promise<ReservedRange[]> {
   const supabase = await createClient()
-  // Vista pública con solo fechas (anon puede leerla; la tabla completa no)
-  const { data } = await supabase
-    .from("reservation_availability")
-    .select("start_date, end_date")
-    .eq("vehicle_id", vehicleId)
+  const { data, error } = await supabase.rpc(
+    "get_reserved_ranges_for_vehicle",
+    { p_vehicle_id: vehicleId },
+  )
+  if (error) return []
 
-  return (data ?? []).map((r) => ({
+  return (data ?? []).map((r: { start_date: string; end_date: string }) => ({
     from: String(r.start_date),
     to: String(r.end_date),
   }))
@@ -207,11 +196,12 @@ export async function createPublicReservation(
 
   const supabase = await createClient()
 
-  const { data: vehicle, error: vehicleError } = await supabase
-    .from("vehicles")
-    .select("id, daily_price, status")
-    .eq("id", vehicleId)
-    .maybeSingle()
+  // Fetch del vehicle vía RPC (security definer, bypassea RLS).
+  const { data: vehicleRows, error: vehicleError } = await supabase.rpc(
+    "get_public_vehicle_for_reservation",
+    { p_id: vehicleId },
+  )
+  const vehicle = Array.isArray(vehicleRows) ? vehicleRows[0] : null
 
   if (vehicleError || !vehicle) {
     return {
@@ -228,7 +218,7 @@ export async function createPublicReservation(
     }
   }
 
-  // Overlap check vía RPC (anon no puede SELECT directo sobre la tabla).
+  // Overlap check vía RPC (security definer).
   // `false` significa que hay solapamiento.
   const { data: isAvailable } = await supabase.rpc(
     "check_vehicle_availability",
@@ -254,14 +244,17 @@ export async function createPublicReservation(
   const totalPrice = days * Number(vehicle.daily_price)
 
   const year = start.getFullYear()
-  const { count: yearCount } = await supabase
-    .from("reservations")
-    .select("*", { count: "exact", head: true })
-    .ilike("numero", `PKR-${year}-%`)
+  const { data: yearCountData } = await supabase.rpc(
+    "count_reservations_by_year",
+    { p_year: year },
+  )
+  const yearCount = Number(yearCountData ?? 0)
 
   const seq = (yearCount ?? 0) + 1
   const numero = nextReservationNumber(year, seq)
 
+  // Insert con anon client (policy "Anyone can create reservation" lo permite
+  // para anon y authenticated).
   const { error: insertError } = await supabase.from("reservations").insert({
     numero,
     vehicle_id: vehicleId,
