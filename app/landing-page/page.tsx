@@ -1,74 +1,70 @@
 import Link from "next/link";
 import Image from "next/image";
+import { Space_Grotesk } from "next/font/google";
+import CarruselFotos from "@/components/Carusel-landing-page";
+import { FaInstagram, FaTiktok } from "react-icons/fa";
+const spaceGrotesk = Space_Grotesk({subsets: ["latin"],weight: ["400", "500", "700"]});
+
+
 
 function LandingPage() {
-
   return (
     <div>
-      <header className="w-full border-b border-gray-200 bg-white">
+      <header className="absolute top-0 left-0 z-50 w-full bg-transparent">
         <div className="flex items-center justify-between px-6 py-3">
           <div className="flex items-center gap-4">
             <Image
-              src="/logo-prototipo-3.svg"
+              src="/PickyLogo.svg"
               alt="PickyRentCar"
               width={70}
               height={70}
               priority
             />
-
-            <button className="rounded-lg px-3 py-2 hover:bg-gray-100">
-              <div className="flex items-center gap-3">
-                <div className="flex flex-col gap-1.5">
-                  <span className="h-0.5 w-6 bg-black"></span>
-                  <span className="h-0.5 w-6 bg-black"></span>
-                  <span className="h-0.5 w-6 bg-black"></span>
-                </div>
-                <span className="text-sm font-medium">Menu</span>
-              </div>
-            </button>
           </div>
 
           <div className="flex items-center gap-3">
-            <Link href="/login" className="rounded-lg px-5 py-2.5 font-medium text-gray-700 hover:bg-gray-100">
+            <Link
+              href="/login"
+              className="rounded-lg px-5 py-2.5 font-medium text-white hover:bg-[#0A1F45]"
+            >
               Iniciar sesion
             </Link>
 
-            <Link href="/register" className="rounded-lg bg-[#071633] px-5 py-2.5 font-medium text-white hover:bg-[#0A1F45]">
+            <Link
+              href="/register"
+              className="rounded-lg bg-[#071633] px-5 py-2.5 font-medium text-white hover:bg-[#0A1F45]"
+            >
               Crear cuenta
             </Link>
           </div>
         </div>
       </header>
 
-      
 
-      
-      <section className="flex flex-col items-center px-6 pt-4 text-center">
-        <h1 className="text-5xl font-semibold tracking-tight">
-          Bienvenido a PickyRentCar
-        </h1>
 
-        <p className="mt-5 max-w-2xl text-lg leading-relaxed text-gray-500">
-          Viaja seguro, frontea y haz paquete en la avenida con nuestros
-          vehiculos
-        </p>
 
-        <div className="mt-4 w-full max-w-6xl">
-          <Image
-            src="/Foto-Landing-page.png"
-            alt="Vehiculos disponibles en PickyRentCar"
-            width={1400}
-            height={600}
-            priority
-            className="h-auto w-full object-contain"
-          />
+      <section className="relative h-screen overflow-hidden">
+        <CarruselFotos />
+
+        <div className="absolute inset-0 bg-black/15" />
+
+        <div className="absolute inset-0 z-20 flex flex-col items-center justify-start pt-24 text-center text-black">
+          <h1
+            className={`${spaceGrotesk.className} text-5xl md:text-7xl font-bold`}
+          >
+            Bienvenido a PickyRentCar
+          </h1>
+
+          <p className="mt-6 max-w-2xl text-lg text-black">
+            Viaja lejos y seguro con nuestros vehiculos
+          </p>
         </div>
       </section>
 
       
 
 
-      <footer className="mt-4 bg-gradient-to-b from-[#071633] via-[#020817] to-black text-white">
+      <footer className="bg-gradient-to-b from-[#071633] via-[#020817] to-black text-white">
         <div className="mx-auto max-w-7xl px-8 py-12">
           <div>
             <h2 className="text-3xl font-semibold items-center px-6 pt-4 text-left">
@@ -105,8 +101,11 @@ function LandingPage() {
 
             <div>
               <h3 className="font-semibold text-white">Siguenos</h3>
-              <p className="mt-4 text-sm text-gray-400">Instagram</p>
-              <p className="mt-2 text-sm text-gray-400">TikTok</p>
+
+              <div className="mt-4 flex gap-4">
+                <FaInstagram size={28} />
+                <FaTiktok size={28} />
+              </div>
             </div>
           </div>
         </div>
