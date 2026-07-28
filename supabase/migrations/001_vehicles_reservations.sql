@@ -68,6 +68,8 @@ create policy "Owners can delete vehicles"
 --    Reemplazar '<UUID_ADMIN>' con el UUID del primer admin registrado.
 -- ----------------------------------------------------------------------------
 
+-- no fue necesario usarlo ya que los vehículos existentes ya tenían created_by asignado.
+
 -- update public.vehicles
 -- set created_by = '<UUID_ADMIN>'
 -- where created_by is null;
