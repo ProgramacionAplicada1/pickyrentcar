@@ -10,7 +10,7 @@ const spaceGrotesk = Space_Grotesk({subsets: ["latin"],weight: ["400", "500", "7
 function LandingPage() {
   return (
     <div>
-      <header className="absolute top-0 left-0 z-50 w-full bg-transparent">
+      <header className="absolute top-0 left-0 z-50 w-full bg-white/30 backdrop-blur-md">
         <div className="flex items-center justify-between px-6 py-3">
           <div className="flex items-center gap-4">
             <Image
@@ -25,7 +25,7 @@ function LandingPage() {
           <div className="flex items-center gap-3">
             <Link
               href="/login"
-              className="rounded-lg px-5 py-2.5 font-medium text-white hover:bg-[#0A1F45]"
+              className="rounded-lg bg-[#071633] px-5 py-2.5 font-medium text-white hover:bg-[#0A1F45]"
             >
               Iniciar sesion
             </Link>
@@ -40,29 +40,23 @@ function LandingPage() {
         </div>
       </header>
 
-
-
-
       <section className="relative h-screen overflow-hidden">
         <CarruselFotos />
 
         <div className="absolute inset-0 bg-black/15" />
 
-        <div className="absolute inset-0 z-20 flex flex-col items-center justify-start pt-24 text-center text-black">
+        <div className="absolute inset-0 z-20 flex flex-col items-center justify-start pt-24 text-center text-white">
           <h1
             className={`${spaceGrotesk.className} text-5xl md:text-7xl font-bold`}
           >
             Bienvenido a PickyRentCar
           </h1>
 
-          <p className="mt-6 max-w-2xl text-lg text-black">
+          <p className="mt-6 max-w-2xl text-lg text-white/90">
             Viaja lejos y seguro con nuestros vehiculos
           </p>
         </div>
       </section>
-
-      
-
 
       <footer className="bg-gradient-to-b from-[#071633] via-[#020817] to-black text-white">
         <div className="mx-auto max-w-7xl px-8 py-12">
