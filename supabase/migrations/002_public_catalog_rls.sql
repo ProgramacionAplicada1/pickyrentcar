@@ -82,14 +82,3 @@ as $$
 $$;
 
 grant execute on function public.check_vehicle_availability to anon, authenticated;
-
--- ============================================================================
--- Fin de 002_public_catalog_rls.sql
---
--- Resultado:
---   • Anon en /catalogo → ve TODOS los vehículos de todos los dueños
---   • Anon en /catalogo/[id] → ve fechas bloqueadas (vía vista) sin PII
---   • Anon al reservar → RPC valida overlap (anon NO ve la tabla)
---   • Admin en /dashboard → multi-tenant intacto (solo sus vehículos)
---   • Admin en /dashboard/reservas → solo reservas de sus vehículos
--- ============================================================================
