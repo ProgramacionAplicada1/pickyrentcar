@@ -98,6 +98,8 @@ export async function getVehicleReservedRanges(
   vehicleId: string,
 ): Promise<ReservedRange[]> {
   const supabase = await createClient()
+  // RPC con SECURITY DEFINER que reemplaza al view eliminado en 005.
+  // Proyecta solo fechas (la tabla completa no se expone).
   const { data, error } = await supabase.rpc(
     "get_reserved_ranges_for_vehicle",
     { p_vehicle_id: vehicleId },
