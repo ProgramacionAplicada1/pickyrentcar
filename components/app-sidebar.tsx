@@ -124,13 +124,14 @@ export function AppSidebar() {
         {/* Logo */}
         <div className="border-b border-slate-800 px-8 py-7">
           <Link href="/dashboard" className="flex items-center gap-3">
-            <div className="flex size-16 shrink-0 items-center justify-center rounded-2xl bg-white p-2 shadow-lg">
+            <div className="flex size-16 shrink-0 items-center justify-center rounded-2xl bg-slate-800/40 p-2 shadow-lg ring-1 ring-white/10">
               <Image
-                src="/logo-prototipo-3.svg"
+                src="/peaky-app.svg"
                 alt="PickyRentCar"
                 width={52}
                 height={52}
                 priority
+                className="size-13 brightness-0 invert"
               />
             </div>
             <div className="flex flex-col">

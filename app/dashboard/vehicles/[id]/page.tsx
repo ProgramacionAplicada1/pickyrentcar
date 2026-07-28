@@ -5,9 +5,13 @@ import {
   ArrowLeft01Icon,
   Car01Icon,
   ColorPickerIcon,
+  Dollar01Icon,
   Edit01Icon,
+  FuelIcon,
   LicenseIcon,
   Note01Icon,
+  Settings01Icon,
+  TagIcon,
   UserIcon,
 } from "@hugeicons/core-free-icons"
 
@@ -21,7 +25,9 @@ import {
 } from "@/components/ui/card"
 import { StatusBadge } from "@/components/vehicles/status-badge"
 import { DeleteVehicleButton } from "@/components/vehicles/vehicle-actions"
-import { createClient } from "@/lib/supabase/server"
+import { ImageGalleryDialog } from "@/components/vehicles/image-gallery-dialog"
+import { formatCurrency } from "@/lib/utils/formatCurrency"
+import { getVehicleById } from "@/services/vehicles"
 
 export const metadata = {
   title: "Vehículo · PickyRentCar",
@@ -31,34 +37,12 @@ type Props = {
   params: Promise<{ id: string }>
 }
 
-type VehicleFull = {
-  id: string
-  plate: string
-  brand: string
-  model: string
-  year: number
-  color: string | null
-  seats: number | null
-  status: string
-  notes: string | null
-  image_url: string | null
-  created_at: string
-  updated_at: string
-}
-
 export default async function VehicleDetailPage({ params }: Props) {
   const { id } = await params
-  const supabase = await createClient()
-  const { data } = await supabase
-    .from("vehicles")
-    .select(
-      "id, plate, brand, model, year, color, seats, status, notes, image_url, created_at, updated_at",
-    )
-    .eq("id", id)
-    .maybeSingle()
+  const vehicle = await getVehicleById(id)
+  if (!vehicle) notFound()
 
-  if (!data) notFound()
-  const vehicle = data as VehicleFull
+  const cover = vehicle.image_urls[0] ?? null
 
   const created = new Date(vehicle.created_at).toLocaleDateString("es-ES", {
     day: "2-digit",
@@ -87,10 +71,10 @@ export default async function VehicleDetailPage({ params }: Props) {
       <div className="mx-auto flex w-full max-w-3xl flex-col gap-4">
         <Card className="gap-0 overflow-hidden rounded-2xl p-0">
           <div className="relative aspect-[16/9] w-full overflow-hidden bg-muted">
-            {vehicle.image_url ? (
+            {cover ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img
-                src={vehicle.image_url}
+                src={cover}
                 alt={`${vehicle.brand} ${vehicle.model}`}
                 className="size-full object-cover"
               />
@@ -102,6 +86,12 @@ export default async function VehicleDetailPage({ params }: Props) {
                   className="size-16 text-muted-foreground/40"
                 />
               </div>
+            )}
+            {vehicle.image_urls.length > 0 && (
+              <span className="absolute top-3 right-3 rounded-full bg-card/90 px-2.5 py-1 text-xs font-medium text-foreground backdrop-blur">
+                {vehicle.image_urls.length} foto
+                {vehicle.image_urls.length === 1 ? "" : "s"}
+              </span>
             )}
           </div>
 
@@ -115,12 +105,22 @@ export default async function VehicleDetailPage({ params }: Props) {
             <CardTitle className="text-2xl">
               {vehicle.brand} {vehicle.model}
             </CardTitle>
+            {vehicle.nombre && (
+              <p className="text-sm font-medium text-primary italic">
+                &ldquo;{vehicle.nombre}&rdquo;
+              </p>
+            )}
             <p className="font-mono text-lg font-semibold tracking-wider">
               {vehicle.plate}
             </p>
           </CardHeader>
 
           <CardContent className="flex flex-col gap-3 px-6 pb-6">
+            <DetailRow
+              icon={<HugeiconsIcon icon={TagIcon} strokeWidth={1.5} />}
+              label="Categoría"
+              value={vehicle.category}
+            />
             <DetailRow
               icon={<HugeiconsIcon icon={ColorPickerIcon} strokeWidth={1.5} />}
               label="Color"
@@ -131,6 +131,21 @@ export default async function VehicleDetailPage({ params }: Props) {
               label="Asientos"
               value={vehicle.seats?.toString() ?? "—"}
             />
+            <DetailRow
+              icon={<HugeiconsIcon icon={Settings01Icon} strokeWidth={1.5} />}
+              label="Transmisión"
+              value={vehicle.transmission}
+            />
+            <DetailRow
+              icon={<HugeiconsIcon icon={FuelIcon} strokeWidth={1.5} />}
+              label="Combustible"
+              value={vehicle.fuel_type}
+            />
+            <DetailRow
+              icon={<HugeiconsIcon icon={Dollar01Icon} strokeWidth={1.5} />}
+              label="Precio por día"
+              value={formatCurrency(Number(vehicle.daily_price))}
+            />
             {vehicle.notes && (
               <DetailRow
                 icon={<HugeiconsIcon icon={Note01Icon} strokeWidth={1.5} />}
@@ -139,6 +154,19 @@ export default async function VehicleDetailPage({ params }: Props) {
                 multiline
               />
             )}
+
+            {vehicle.image_urls.length > 0 && (
+              <div className="mt-3 flex flex-col gap-2 border-t pt-4">
+                <p className="text-[11px] font-medium tracking-[0.08em] text-muted-foreground uppercase">
+                  Galería
+                </p>
+                <ImageGalleryDialog
+                  images={vehicle.image_urls}
+                  vehicleLabel={`${vehicle.brand} ${vehicle.model}`}
+                />
+              </div>
+            )}
+
             <div className="mt-2 flex flex-col gap-1 border-t pt-4 text-xs text-muted-foreground">
               <p>
                 <span className="font-medium text-foreground/70">Creado:</span>{" "}

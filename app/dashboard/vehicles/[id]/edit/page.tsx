@@ -1,5 +1,5 @@
 import Link from "next/link"
-import { notFound, redirect } from "next/navigation"
+import { notFound } from "next/navigation"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { ArrowLeft01Icon } from "@hugeicons/core-free-icons"
 
@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/card"
 import { VehicleForm } from "@/components/vehicles/vehicle-form"
 import type { VehicleFormData } from "@/app/dashboard/vehicles/validations"
-import { createClient } from "@/lib/supabase/server"
+import { getVehicleById } from "@/services/vehicles"
 
 export const metadata = {
   title: "Editar vehículo · PickyRentCar",
@@ -23,40 +23,13 @@ type Props = {
   params: Promise<{ id: string }>
 }
 
-type VehicleRow = {
-  id: string
-  plate: string
-  brand: string
-  model: string
-  year: number
-  color: string | null
-  seats: number | null
-  status: string
-  notes: string | null
-  image_url: string | null
-}
-
 export default async function EditVehiclePage({ params }: Props) {
   const { id } = await params
-
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-  if (!user) redirect("/login")
-
-  const { data } = await supabase
-    .from("vehicles")
-    .select(
-      "id, plate, brand, model, year, color, seats, status, notes, image_url",
-    )
-    .eq("id", id)
-    .maybeSingle()
-
-  if (!data) notFound()
-  const vehicle = data as VehicleRow
+  const vehicle = await getVehicleById(id)
+  if (!vehicle) notFound()
 
   const initialData: VehicleFormData = {
+    nombre: vehicle.nombre,
     plate: vehicle.plate,
     brand: vehicle.brand,
     model: vehicle.model,
@@ -64,8 +37,12 @@ export default async function EditVehiclePage({ params }: Props) {
     color: vehicle.color,
     seats: vehicle.seats ?? 5,
     status: (vehicle.status as VehicleFormData["status"]) ?? "available",
+    transmission: vehicle.transmission,
+    fuel_type: vehicle.fuel_type,
+    category: vehicle.category,
+    daily_price: Number(vehicle.daily_price),
     notes: vehicle.notes,
-    image_url: vehicle.image_url,
+    image_urls: vehicle.image_urls,
   }
 
   return (

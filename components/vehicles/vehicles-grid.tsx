@@ -1,9 +1,7 @@
 "use client"
 
-import {
-  VehicleCard,
-  type VehicleRow,
-} from "@/components/vehicles/vehicle-card"
+import { VehicleCard } from "@/components/vehicles/vehicle-card"
+import type { VehicleRow } from "@/components/vehicles/vehicle-row"
 
 type Props = {
   vehicles: VehicleRow[]

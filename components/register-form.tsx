@@ -166,7 +166,7 @@ export function RegisterForm() {
           onChange={(e) => setFullName(e.currentTarget.value)}
           disabled={isPending}
           aria-invalid={!!errors.fullName}
-          className="h-10 pl-11"
+          className="h-9 pl-11"
         />
       </Field>
 
@@ -186,7 +186,7 @@ export function RegisterForm() {
           onChange={(e) => setEmail(e.currentTarget.value)}
           disabled={isPending}
           aria-invalid={!!errors.email}
-          className="h-10 pl-11"
+          className="h-9 pl-11"
         />
       </Field>
 
@@ -213,7 +213,7 @@ export function RegisterForm() {
           onChange={(e) => setPassword(e.currentTarget.value)}
           disabled={isPending}
           aria-invalid={!!errors.password}
-          className="h-10 pl-11 pr-11"
+          className="h-9 pl-11 pr-11"
         />
       </Field>
 
@@ -240,7 +240,7 @@ export function RegisterForm() {
           onChange={(e) => setConfirmPassword(e.currentTarget.value)}
           disabled={isPending}
           aria-invalid={!!errors.confirmPassword}
-          className="h-10 pl-11 pr-11"
+          className="h-9 pl-11 pr-11"
         />
       </Field>
 
@@ -283,7 +283,7 @@ export function RegisterForm() {
         type="submit"
         size="lg"
         disabled={isPending}
-        className="h-10 w-full rounded-full"
+        className="h-9 w-full rounded-full"
       >
         {isPending ? "Creando cuenta…" : "Crear cuenta"}
       </Button>

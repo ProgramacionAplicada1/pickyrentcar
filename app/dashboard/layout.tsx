@@ -1,24 +1,31 @@
 import { redirect } from "next/navigation"
 
-import { createClient } from "@/lib/supabase/server"
 import { AppSidebar } from "@/components/app-sidebar"
 import { SiteHeader } from "@/components/site-header"
 import { SidebarToggleProvider } from "@/components/sidebar-toggle-context"
+import { getCurrentUser } from "@/services/auth"
 
 export default async function DashboardLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
-  const supabase = await createClient()
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const user = await getCurrentUser()
 
   if (!user) {
     redirect("/login")
   }
+
+  if (user.role !== "admin") {
+    redirect("/catalogo")
+  }
+
+  const initials = user.displayName
+    .split(" ")
+    .map((p) => p[0] ?? "")
+    .join("")
+    .substring(0, 2)
+    .toUpperCase()
 
   return (
     <SidebarToggleProvider>

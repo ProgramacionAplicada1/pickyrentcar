@@ -6,8 +6,7 @@ import { Button } from "@/components/ui/button"
 import { EmptyVehicles } from "@/components/vehicles/empty-vehicles"
 import { VehiclesView } from "@/components/vehicles/vehicles-view"
 import { ViewToggle, type VehicleView } from "@/components/vehicles/view-toggle"
-import type { VehicleRow } from "@/components/vehicles/vehicle-card"
-import { createClient } from "@/lib/supabase/server"
+import { listVehicles } from "@/services/vehicles"
 
 export const metadata = {
   title: "Vehículos · PickyRentCar",
@@ -21,15 +20,7 @@ export default async function VehiclesPage({ searchParams }: Props) {
   const { view } = await searchParams
   const currentView: VehicleView = view === "table" ? "table" : "grid"
 
-  const supabase = await createClient()
-  const { data } = await supabase
-    .from("vehicles")
-    .select(
-      "id, plate, brand, model, year, color, seats, status, notes, image_url, created_at",
-    )
-    .order("created_at", { ascending: false })
-
-  const vehicles: VehicleRow[] = (data ?? []) as VehicleRow[]
+  const vehicles = await listVehicles()
   const isEmpty = vehicles.length === 0
 
   return (

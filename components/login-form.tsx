@@ -186,7 +186,7 @@ export function LoginForm() {
         <p>
           ¿No tienes una cuenta?{" "}
           <Link
-            href="/register"
+            href="/register-client"
             className="font-semibold text-foreground underline-offset-4 hover:underline"
           >
             Crear cuenta

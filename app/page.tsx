@@ -1,15 +1,17 @@
 import { redirect } from "next/navigation"
-import { createClient } from "@/lib/supabase/server"
 
-export default async function Home() {
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+import { getCurrentUser } from "@/services/auth"
 
-  if (user) {
+export default async function RootPage() {
+  const user = await getCurrentUser()
+
+  if (!user) {
+    redirect("/login")
+  }
+
+  if (user.role === "admin") {
     redirect("/dashboard")
   }
 
-  redirect("/landing-page")
+  redirect("/catalogo")
 }

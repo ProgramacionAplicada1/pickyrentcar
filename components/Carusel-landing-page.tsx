@@ -19,7 +19,7 @@ function CarruselFotos() {
   }
 
 
-  let carros = [
+  const carros = [
     { id: 1, imagen: "/volvo.png"},
     { id: 2, imagen: "/corolla.png"},
     { id: 3,imagen: "/crv.png"},
