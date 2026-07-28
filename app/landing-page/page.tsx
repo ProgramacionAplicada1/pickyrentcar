@@ -58,6 +58,14 @@ function LandingPage() {
           <p className="mt-6 max-w-2xl text-lg text-black">
             Viaja lejos y seguro con nuestros vehiculos
           </p>
+
+          <Link
+            href="/catalogo"
+            className="mt-8 inline-flex items-center gap-2 rounded-full bg-[#071633] px-6 py-3 font-medium text-white shadow-lg transition-colors hover:bg-[#0A1F45]"
+          >
+            Explorar catálogo
+            <span aria-hidden>→</span>
+          </Link>
         </div>
       </section>
 
