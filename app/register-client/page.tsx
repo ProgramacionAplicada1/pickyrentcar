@@ -22,7 +22,6 @@ export default async function ClientRegisterPage() {
   } = await supabase.auth.getUser()
 
   if (user) {
-
     redirect("/")
   }
 
