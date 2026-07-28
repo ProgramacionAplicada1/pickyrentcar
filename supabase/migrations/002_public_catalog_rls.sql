@@ -36,22 +36,23 @@ create policy "Public catalog can view vehicles"
   using (true);
 
 -- ----------------------------------------------------------------------------
--- 2. Vista `reservation_availability`: solo fechas, oculta datos personales
+-- 2. ELIMINADO EN 005: la view public.reservation_availability fue removida
 -- ----------------------------------------------------------------------------
--- `reservations` contiene client_name, client_email, client_phone.
--- Para el calendario público solo necesitamos disponibilidad (fechas),
--- así que creamos una vista que proyecta solo lo necesario.
+-- El linter de Supabase la marcaba como CRITICAL (View ... defined with
+-- SECURITY DEFINER property). La función get_reserved_ranges_for_vehicle
+-- (creada en 004_public_catalog_rpcs.sql) hace el mismo trabajo y NO es
+-- flaggeada. Se conserva este bloque comentado como referencia histórica.
 
-create or replace view public.reservation_availability as
-  select
-    vehicle_id,
-    start_date,
-    end_date,
-    status
-  from public.reservations
-  where status not in ('cancelada', 'finalizada');
+-- create or replace view public.reservation_availability as
+--   select
+--     vehicle_id,
+--     start_date,
+--     end_date,
+--     status
+--   from public.reservations
+--   where status not in ('cancelada', 'finalizada');
 
-grant select on public.reservation_availability to anon, authenticated;
+-- grant select on public.reservation_availability to anon, authenticated;
 
 -- ----------------------------------------------------------------------------
 -- 3. RPC `check_vehicle_availability`: overlap check sin exponer la tabla
