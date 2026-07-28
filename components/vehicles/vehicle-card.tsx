@@ -20,6 +20,7 @@ import {
 
 import { StatusBadge } from "@/components/vehicles/status-badge"
 import { DeleteVehicleDialog } from "@/components/vehicles/delete-vehicle-dialog"
+import { HoverImageCarousel } from "@/components/vehicles/hover-image-carousel"
 import {
   type VehicleRow,
   getCoverUrl,
@@ -36,68 +37,58 @@ export function VehicleCard({ vehicle }: Props) {
   const cover = getCoverUrl(vehicle)
 
   return (
-    <Card className="relative gap-0 overflow-hidden rounded-2xl p-0 transition-shadow hover:shadow-md">
-      <DropdownMenu>
-        <DropdownMenuTrigger
-          render={
-            <Button
-              variant="ghost"
-              size="icon-sm"
-              aria-label={`Acciones del vehículo ${vehicle.plate}`}
-              className="absolute top-2 right-2 z-10 size-8 rounded-full bg-card/80 text-foreground backdrop-blur"
-            />
-          }
-        >
-          <CardActionsIcon />
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end">
-          <DropdownMenuItem
-            render={
-              <Link href={`/dashboard/vehicles/${vehicle.id}`} />
-            }
-          >
-            Ver detalle
-          </DropdownMenuItem>
-          <DropdownMenuItem
-            render={
-              <Link href={`/dashboard/vehicles/${vehicle.id}/edit`} />
-            }
-          >
-            Editar
-          </DropdownMenuItem>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem
-            variant="destructive"
-            onClick={() => setDialogOpen(true)}
-          >
-            Eliminar
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
-
-      <div className="relative aspect-[4/3] w-full overflow-hidden bg-muted">
-        {cover ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={cover}
-            alt={`${vehicle.brand} ${vehicle.model}`}
-            className="size-full object-cover transition-transform duration-300 group-hover:scale-105"
-          />
-        ) : (
-          <div className="flex size-full items-center justify-center">
-            <HugeiconsIcon
-              icon={Car01Icon}
-              strokeWidth={1.5}
-              className="size-12 text-muted-foreground/40"
-            />
-          </div>
-        )}
-        {vehicle.image_urls.length > 1 && (
-          <span className="absolute bottom-2 right-2 rounded-full bg-card/90 px-2 py-0.5 text-[10px] font-medium text-foreground backdrop-blur">
-            +{vehicle.image_urls.length - 1}
-          </span>
-        )}
-      </div>
+    <Card className="group relative gap-0 overflow-hidden rounded-2xl p-0 transition-shadow hover:shadow-md">
+      <HoverImageCarousel
+        images={vehicle.image_urls}
+        alt={`${vehicle.brand} ${vehicle.model}`}
+        zoomOnHover
+        topRight={
+          <DropdownMenu>
+            <DropdownMenuTrigger
+              render={
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  aria-label={`Acciones del vehículo ${vehicle.plate}`}
+                  className="size-8 rounded-full bg-card/80 text-foreground backdrop-blur"
+                />
+              }
+            >
+              <CardActionsIcon />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem
+                render={
+                  <Link href={`/dashboard/vehicles/${vehicle.id}`} />
+                }
+              >
+                Ver detalle
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                render={
+                  <Link href={`/dashboard/vehicles/${vehicle.id}/edit`} />
+                }
+              >
+                Editar
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                variant="destructive"
+                onClick={() => setDialogOpen(true)}
+              >
+                Eliminar
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        }
+        bottomRight={
+          vehicle.image_urls.length > 1 ? (
+            <span className="rounded-full bg-card/90 px-2 py-0.5 text-[10px] font-medium text-foreground backdrop-blur">
+              +{vehicle.image_urls.length - 1}
+            </span>
+          ) : null
+        }
+      />
 
       <CardContent className="flex flex-col gap-2 p-4">
         <div className="flex items-center justify-between">

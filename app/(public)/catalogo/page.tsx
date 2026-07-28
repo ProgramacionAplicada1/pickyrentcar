@@ -6,15 +6,7 @@ import {
   Search01Icon,
 } from "@hugeicons/core-free-icons"
 
-import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
 import {
   Empty,
   EmptyContent,
@@ -29,7 +21,7 @@ import {
   FieldLabel,
 } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
-import { formatCurrency } from "@/lib/utils/formatCurrency"
+import { CatalogVehicleCard } from "@/components/public/catalog-vehicle-card"
 import { listPublicVehicles } from "@/services/catalog"
 
 type Props = {
@@ -155,90 +147,11 @@ export default async function CatalogoPage({ searchParams }: Props) {
         ) : (
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {vehicles.map((vehicle) => (
-              <PublicVehicleCard key={vehicle.id} vehicle={vehicle} />
+              <CatalogVehicleCard key={vehicle.id} vehicle={vehicle} />
             ))}
           </div>
         )}
       </section>
     </div>
-  )
-}
-
-function PublicVehicleCard({
-  vehicle,
-}: {
-  vehicle: Awaited<ReturnType<typeof listPublicVehicles>>[number]
-}) {
-  const cover = vehicle.image_urls[0] ?? null
-  return (
-    <Card className="gap-0 overflow-hidden rounded-2xl p-0 transition-shadow hover:shadow-md">
-      <div className="relative aspect-[4/3] w-full overflow-hidden bg-muted">
-        {cover ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={cover}
-            alt={`${vehicle.brand} ${vehicle.model}`}
-            className="size-full object-cover"
-          />
-        ) : (
-          <div className="flex size-full items-center justify-center">
-            <HugeiconsIcon
-              icon={Car01Icon}
-              strokeWidth={1.5}
-              className="size-12 text-muted-foreground/40"
-            />
-          </div>
-        )}
-        {vehicle.image_urls.length > 1 && (
-          <span className="absolute top-2 right-2 rounded-full bg-card/90 px-2 py-0.5 text-[10px] font-medium backdrop-blur">
-            {vehicle.image_urls.length} fotos
-          </span>
-        )}
-      </div>
-
-      <CardHeader className="gap-1.5 p-4 pb-2">
-        <CardDescription className="text-xs font-semibold tracking-wide uppercase">
-          {vehicle.category} · {vehicle.year}
-        </CardDescription>
-        <CardTitle className="text-base">
-          {vehicle.brand} {vehicle.model}
-        </CardTitle>
-        {vehicle.nombre && (
-          <p className="text-xs font-medium text-primary italic">
-            &ldquo;{vehicle.nombre}&rdquo;
-          </p>
-        )}
-      </CardHeader>
-
-      <CardContent className="flex flex-col gap-3 p-4 pt-0">
-        <div className="flex flex-wrap items-center gap-1.5">
-          <Badge variant="secondary">{vehicle.transmission}</Badge>
-          <Badge variant="secondary">{vehicle.fuel_type}</Badge>
-        </div>
-        <div className="flex items-center justify-between gap-2">
-          <div className="flex flex-col">
-            <span className="text-[11px] font-medium tracking-[0.08em] text-muted-foreground uppercase">
-              Desde
-            </span>
-            <span className="text-lg font-bold tracking-tight">
-              {formatCurrency(Number(vehicle.daily_price))}
-              <span className="text-xs font-medium text-muted-foreground">
-                {" "}
-                / día
-              </span>
-            </span>
-          </div>
-          <Button
-            variant="default"
-            size="sm"
-            className="rounded-full"
-            nativeButton={false}
-            render={<Link href={`/catalogo/${vehicle.id}`} />}
-          >
-            Ver detalle
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
   )
 }
