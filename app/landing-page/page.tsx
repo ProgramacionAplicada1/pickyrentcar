@@ -2,19 +2,19 @@ import Link from "next/link";
 import Image from "next/image";
 import { Space_Grotesk } from "next/font/google";
 import CarruselFotos from "@/components/Carusel-landing-page";
+import { FaInstagram, FaTiktok } from "react-icons/fa";
+const spaceGrotesk = Space_Grotesk({subsets: ["latin"],weight: ["400", "500", "700"]});
 
 
-const spaceGrotesk = Space_Grotesk({ subsets:["latin"], weight: ["400", "500", "700"],});
 
 function LandingPage() {
-
   return (
     <div>
       <header className="absolute top-0 left-0 z-50 w-full bg-transparent">
         <div className="flex items-center justify-between px-6 py-3">
           <div className="flex items-center gap-4">
             <Image
-              src="/logo-prototipo-3.svg"
+              src="/PickyLogo.svg"
               alt="PickyRentCar"
               width={70}
               height={70}
@@ -40,7 +40,7 @@ function LandingPage() {
         </div>
       </header>
 
-      
+
 
 
       <section className="relative h-screen overflow-hidden">
@@ -64,7 +64,6 @@ function LandingPage() {
       
 
 
-      
       <footer className="bg-gradient-to-b from-[#071633] via-[#020817] to-black text-white">
         <div className="mx-auto max-w-7xl px-8 py-12">
           <div>
@@ -102,8 +101,11 @@ function LandingPage() {
 
             <div>
               <h3 className="font-semibold text-white">Siguenos</h3>
-              <p className="mt-4 text-sm text-gray-400">Instagram</p>
-              <p className="mt-2 text-sm text-gray-400">TikTok</p>
+
+              <div className="mt-4 flex gap-4">
+                <FaInstagram size={28} />
+                <FaTiktok size={28} />
+              </div>
             </div>
           </div>
         </div>
