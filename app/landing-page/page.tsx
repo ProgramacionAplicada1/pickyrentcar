@@ -30,10 +30,7 @@ function LandingPage() {
               Iniciar sesion
             </Link>
 
-            <Link
-              href="/register"
-              className="rounded-lg bg-[#071633] px-5 py-2.5 font-medium text-white hover:bg-[#0A1F45]"
-            >
+            <Link href="/register-client" className="rounded-lg bg-[#071633] px-5 py-2.5 font-medium text-white hover:bg-[#0A1F45]">
               Crear cuenta
             </Link>
           </div>
