@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { FaEnvelope, FaPhoneAlt, FaUser } from "react-icons/fa";
+import type { Reservation } from "../../types/reservation"
 
 interface ReservationClientProps {
   cliente: string;

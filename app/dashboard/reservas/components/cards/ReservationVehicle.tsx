@@ -2,9 +2,11 @@
 
 import Image from "next/image";
 import { FaCarSide, FaGasPump, FaCogs } from "react-icons/fa";
+import type { Reservation } from "../../types/reservation"
+
 
 interface ReservationVehicleProps {
-  imagen: string;
+  imagen: string | null;
   vehiculo: string;
   placa: string;
   tipoVehiculo: string;

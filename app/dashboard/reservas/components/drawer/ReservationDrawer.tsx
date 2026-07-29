@@ -15,22 +15,25 @@ import {
   FaUser,
 } from "react-icons/fa";
 
-import type { Reservation } from "../../data/mockReservations";
+import type { Reservation } from "../../types/reservation"
 import { formatCurrency } from "@/lib/utils/formatCurrency";
 
 import StatusBadge from "../cards/StatusBadge";
 
 interface ReservationDrawerProps {
-  reservation: Reservation | null;
-  open: boolean;
-  onClose: () => void;
+  reservation: Reservation | null
+  open: boolean
+  onClose: () => void
 }
 
-const paymentStyles = {
-  Pagado: "border-emerald-200 bg-emerald-50 text-emerald-700",
-  Pendiente: "border-red-200 bg-red-50 text-red-700",
-  Parcial: "border-amber-200 bg-amber-50 text-amber-700",
-};
+function formatDate(date: string) {
+  return new Intl.DateTimeFormat("es-DO", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  }).format(new Date(`${date}T00:00:00`));
+}
+
 
 export default function ReservationDrawer({
   reservation,
@@ -67,9 +70,8 @@ export default function ReservationDrawer({
 
   return (
     <div
-      className={`fixed inset-0 z-50 transition ${
-        open ? "pointer-events-auto" : "pointer-events-none"
-      }`}
+      className={`fixed inset-0 z-50 transition ${open ? "pointer-events-auto" : "pointer-events-none"
+        }`}
       aria-hidden={!open}
     >
       {/* Fondo oscuro */}
@@ -77,9 +79,8 @@ export default function ReservationDrawer({
         type="button"
         aria-label="Cerrar panel"
         onClick={onClose}
-        className={`absolute inset-0 bg-slate-950/45 backdrop-blur-sm transition-opacity duration-300 ${
-          open ? "opacity-100" : "opacity-0"
-        }`}
+        className={`absolute inset-0 bg-slate-950/45 backdrop-blur-sm transition-opacity duration-300 ${open ? "opacity-100" : "opacity-0"
+          }`}
       />
 
       {/* Panel lateral */}
@@ -87,9 +88,8 @@ export default function ReservationDrawer({
         role="dialog"
         aria-modal="true"
         aria-label={`Detalle de ${reservation.numeroReserva}`}
-        className={`absolute right-0 top-0 flex h-svh w-full max-w-xl flex-col bg-white shadow-2xl transition-transform duration-300 ease-out ${
-          open ? "translate-x-0" : "translate-x-full"
-        }`}
+        className={`absolute right-0 top-0 flex h-svh w-full max-w-xl flex-col bg-white shadow-2xl transition-transform duration-300 ease-out ${open ? "translate-x-0" : "translate-x-full"
+          }`}
       >
         {/* Encabezado */}
         <header className="flex items-start justify-between border-b border-slate-200 px-6 py-5">
@@ -217,7 +217,7 @@ export default function ReservationDrawer({
                   Inicio
                 </p>
                 <p className="mt-1 font-semibold text-slate-900">
-                  {reservation.fechaInicio}
+                  {formatDate(reservation.fechaInicio)}
                 </p>
               </div>
 
@@ -228,7 +228,7 @@ export default function ReservationDrawer({
                   Fin
                 </p>
                 <p className="mt-1 font-semibold text-slate-900">
-                  {reservation.fechaFin}
+                  {formatDate(reservation.fechaFin)}
                 </p>
               </div>
             </div>
@@ -245,6 +245,7 @@ export default function ReservationDrawer({
           </section>
 
           {/* Pago */}
+          {/* Pago */}
           <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
             <div className="flex items-start justify-between gap-4">
               <div>
@@ -257,24 +258,35 @@ export default function ReservationDrawer({
                 </h3>
               </div>
 
-              <span
-                className={`rounded-full border px-3 py-1 text-xs font-semibold ${
-                  paymentStyles[reservation.estadoPago]
-                }`}
-              >
-                {reservation.estadoPago}
+              <span className="rounded-full border border-slate-200 bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">
+                Pago no registrado
               </span>
             </div>
 
-            <div className="mt-5 flex items-center gap-3 rounded-2xl bg-slate-50 p-4">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white text-slate-600 shadow-sm">
-                <FaCreditCard />
+            <div className="mt-5 grid gap-3 sm:grid-cols-2">
+              <div className="flex items-center gap-3 rounded-2xl bg-slate-50 p-4">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white text-slate-600 shadow-sm">
+                  <FaCreditCard />
+                </div>
+
+                <div>
+                  <p className="text-xs text-slate-400">
+                    Precio diario
+                  </p>
+
+                  <p className="font-semibold text-slate-800">
+                    {formatCurrency(reservation.precioDiario)}
+                  </p>
+                </div>
               </div>
 
-              <div>
-                <p className="text-xs text-slate-400">Método de pago</p>
-                <p className="font-semibold text-slate-800">
-                  {reservation.metodoPago}
+              <div className="rounded-2xl bg-slate-50 p-4">
+                <p className="text-xs text-slate-400">
+                  Método de pago
+                </p>
+
+                <p className="mt-1 font-semibold text-slate-800">
+                  {reservation.metodoPago ?? "No registrado"}
                 </p>
               </div>
             </div>
