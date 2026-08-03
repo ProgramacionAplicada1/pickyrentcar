@@ -1,4 +1,5 @@
 "use client";
+
 import {
   FaCalendarAlt,
   FaCarSide,
@@ -6,59 +7,31 @@ import {
   FaClock,
 } from "react-icons/fa";
 
-type ReservationStat = {
-  label: string;
-  value: string;
-  icon: React.ElementType;
-  accent: string;
-  bg: string;
-  text: string;
+import type {
+  AdaptedReservationStat,
+  StatKey,
+} from "../../lib/adapter";
+
+const ICON_MAP: Record<StatKey, React.ElementType> = {
+  total: FaCalendarAlt,
+  activas: FaCarSide,
+  hoy: FaClock,
+  facturado: FaMoneyBillWave,
 };
 
-const stats: ReservationStat[] = [
-  {
-    label: "Reservas totales",
-    value: "128",
-    icon: FaCalendarAlt,
-    accent: "border-blue-500/30",
-    bg: "bg-blue-500/10",
-    text: "text-blue-500",
-  },
-  {
-    label: "Activas",
-    value: "15",
-    icon: FaCarSide,
-    accent: "border-emerald-500/30",
-    bg: "bg-emerald-500/10",
-    text: "text-emerald-500",
-  },
-  {
-    label: "Hoy",
-    value: "6",
-    icon: FaClock,
-    accent: "border-amber-500/30",
-    bg: "bg-amber-500/10",
-    text: "text-amber-500",
-  },
-  {
-    label: "Facturado",
-    value: "RD$480,000",
-    icon: FaMoneyBillWave,
-    accent: "border-cyan-500/30",
-    bg: "bg-cyan-500/10",
-    text: "text-cyan-500",
-  },
-];
+type Props = {
+  stats: AdaptedReservationStat[];
+};
 
-export default function ReservationStats() {
+export default function ReservationStats({ stats }: Props) {
   return (
     <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
       {stats.map((stat) => {
-        const Icon = stat.icon;
+        const Icon = ICON_MAP[stat.key];
 
         return (
           <article
-            key={stat.label}
+            key={stat.key}
             className={`rounded-3xl border ${stat.accent} bg-white p-5 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg`}
           >
             <div className="flex items-start justify-between gap-4">

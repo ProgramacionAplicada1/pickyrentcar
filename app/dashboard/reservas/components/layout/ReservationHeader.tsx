@@ -1,13 +1,7 @@
 "use client";
-import { FaCalendarCheck, FaPlus } from "react-icons/fa";
+import { FaCalendarCheck } from "react-icons/fa";
 
-type ReservationHeaderProps = {
-  onNewReservation?: () => void;
-};
-
-export default function ReservationHeader({
-  onNewReservation,
-}: ReservationHeaderProps) {
+export default function ReservationHeader() {
   return (
     <section className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
       <div className="space-y-2">
@@ -26,8 +20,6 @@ export default function ReservationHeader({
           </p>
         </div>
       </div>
-
-    
     </section>
   );
 }

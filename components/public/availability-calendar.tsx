@@ -35,15 +35,17 @@ export function AvailabilityCalendar({
   }, [disabledRanges])
 
   return (
-    <Calendar
-      mode="range"
-      numberOfMonths={2}
-      locale={es}
-      selected={selected}
-      onSelect={onSelect}
-      disabled={disabled}
-      defaultMonth={minDate ?? new Date()}
-      className="rounded-2xl border bg-card"
-    />
+    <div className="flex justify-center">
+      <Calendar
+        mode="range"
+        numberOfMonths={1}
+        locale={es}
+        selected={selected}
+        onSelect={onSelect}
+        disabled={disabled}
+        defaultMonth={minDate ?? new Date()}
+        className="rounded-2xl border bg-card"
+      />
+    </div>
   )
 }

@@ -28,7 +28,7 @@ export function LogoutDialogButton() {
     await supabase.auth.signOut()
     setIsPending(false)
     setOpen(false)
-    router.replace("/landing-page")
+    router.replace("/")
   }
 
   return (

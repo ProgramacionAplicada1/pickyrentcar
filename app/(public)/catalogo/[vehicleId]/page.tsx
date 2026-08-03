@@ -25,6 +25,7 @@ import { ImageGalleryDialog } from "@/components/vehicles/image-gallery-dialog"
 import { ReservationForm } from "@/components/public/reservation-form"
 import { VehicleAvailabilityPicker } from "@/components/public/vehicle-availability-picker"
 import { formatCurrency } from "@/lib/utils/formatCurrency"
+import { getCurrentUser } from "@/services/auth"
 import {
   getPublicVehicleById,
   getVehicleReservedRanges,
@@ -49,7 +50,10 @@ export default async function CatalogoVehiclePage({
   const vehicle = await getPublicVehicleById(vehicleId)
   if (!vehicle) notFound()
 
-  const disabledRanges = await getVehicleReservedRanges(vehicleId)
+  const [disabledRanges, currentUser] = await Promise.all([
+    getVehicleReservedRanges(vehicleId),
+    getCurrentUser(),
+  ])
 
   const isUnavailable = vehicle.status === "maintenance"
   const cover = vehicle.image_urls[0] ?? null
@@ -220,6 +224,14 @@ export default async function CatalogoVehiclePage({
                 dailyPrice={Number(vehicle.daily_price)}
                 initialStartDate={from}
                 initialEndDate={to}
+                currentUser={
+                  currentUser
+                    ? {
+                        displayName: currentUser.displayName,
+                        email: currentUser.email,
+                      }
+                    : null
+                }
               />
             )}
           </Card>

@@ -131,7 +131,9 @@ export function HoverImageCarousel({
         </div>
       )}
 
-      {topRight}
+      {topRight && (
+        <div className="absolute top-2 right-2 z-10">{topRight}</div>
+      )}
 
       {photosBadge && hasMultiple && !hovered && (
         <span className="absolute top-2 right-2 rounded-full bg-card/90 px-2 py-0.5 text-[10px] font-medium backdrop-blur">

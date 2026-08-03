@@ -1,11 +1,11 @@
-import type { ReservationStatus } from "../../data/mockReservations";
+import type { AdaptedReservationStatus } from "../../data/mockReservations";
 
 interface StatusBadgeProps {
-  status: ReservationStatus;
+  status: AdaptedReservationStatus;
 }
 
 const statusConfig: Record<
-  ReservationStatus,
+  AdaptedReservationStatus,
   {
     text: string;
     dot: string;

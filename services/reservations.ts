@@ -36,6 +36,9 @@ export type ReservationRow = {
     image_urls: string[]
     nombre: string | null
     status: string
+    category: string
+    transmission: string
+    fuel_type: string
   }
 }
 
@@ -69,11 +72,29 @@ function normalizeImageUrls(value: unknown): string[] {
 
 export async function listReservations(): Promise<ReservationRow[]> {
   const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) return []
+
+  // Defense-in-depth: pre-fetch IDs de vehículos del admin y filtrar
+  // por ellos. Aunque RLS esté roto (ej. política huérfana), esto limita
+  // el resultado a vehículos propios.
+  const { data: ownedVehicles } = await supabase
+    .from("vehicles")
+    .select("id")
+    .eq("created_by", user.id)
+  const ownedVehicleIds = (ownedVehicles ?? []).map(
+    (v) => String((v as { id: string }).id),
+  )
+  if (ownedVehicleIds.length === 0) return []
+
   const { data } = await supabase
     .from("reservations")
     .select(
-      "id, numero, client_name, client_email, client_phone, start_date, end_date, days, daily_price, total_price, status, notes, location, created_at, updated_at, vehicles:vehicle_id(id, brand, model, year, plate, image_urls, nombre, status)",
+      "id, numero, client_name, client_email, client_phone, start_date, end_date, days, daily_price, total_price, status, notes, location, created_at, updated_at, vehicles:vehicle_id(id, brand, model, year, plate, image_urls, nombre, status, category, transmission, fuel_type)",
     )
+    .in("vehicle_id", ownedVehicleIds)
     .order("created_at", { ascending: false })
 
   return (data ?? []).map((row) => {
@@ -110,6 +131,9 @@ export async function listReservations(): Promise<ReservationRow[]> {
         image_urls: normalizeImageUrls(vehicle?.image_urls),
         nombre: vehicle?.nombre ?? null,
         status: String(vehicle?.status ?? ""),
+        category: String(vehicle?.category ?? ""),
+        transmission: String(vehicle?.transmission ?? ""),
+        fuel_type: String(vehicle?.fuel_type ?? ""),
       },
     } satisfies ReservationRow
   })
@@ -119,12 +143,28 @@ export async function getReservationById(
   id: string,
 ): Promise<ReservationRow | null> {
   const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) return null
+
+  // Defense-in-depth: pre-fetch owned vehicle IDs y filtrar.
+  const { data: ownedVehicles } = await supabase
+    .from("vehicles")
+    .select("id")
+    .eq("created_by", user.id)
+  const ownedVehicleIds = (ownedVehicles ?? []).map(
+    (v) => String((v as { id: string }).id),
+  )
+  if (ownedVehicleIds.length === 0) return null
+
   const { data } = await supabase
     .from("reservations")
     .select(
-      "id, numero, client_name, client_email, client_phone, start_date, end_date, days, daily_price, total_price, status, notes, location, created_at, updated_at, vehicles:vehicle_id(id, brand, model, year, plate, image_urls, nombre, status)",
+      "id, numero, client_name, client_email, client_phone, start_date, end_date, days, daily_price, total_price, status, notes, location, created_at, updated_at, vehicles:vehicle_id(id, brand, model, year, plate, image_urls, nombre, status, category, transmission, fuel_type)",
     )
     .eq("id", id)
+    .in("vehicle_id", ownedVehicleIds)
     .maybeSingle()
 
   if (!data) return null
@@ -160,6 +200,9 @@ export async function getReservationById(
       image_urls: normalizeImageUrls(vehicle?.image_urls),
       nombre: vehicle?.nombre ?? null,
       status: String(vehicle?.status ?? ""),
+      category: String(vehicle?.category ?? ""),
+      transmission: String(vehicle?.transmission ?? ""),
+      fuel_type: String(vehicle?.fuel_type ?? ""),
     },
   } satisfies ReservationRow
 }
@@ -168,18 +211,56 @@ export async function getReservationStats(): Promise<ReservationStats> {
   const reservations = await listReservations()
   const todayIso = new Date().toISOString().slice(0, 10)
 
+  // Reservas con al menos un pago completado (auto-promoción + gate).
+  const reservationsWithPaidPayment = await getReservationIdsWithCompletedPayment()
+
   const total = reservations.length
   const activas = reservations.filter(
-    (r) => r.status === "confirmada" || r.status === "activa",
+    (r) =>
+      (r.status === "confirmada" || r.status === "activa") &&
+      reservationsWithPaidPayment.has(r.id),
   ).length
   const hoy = reservations.filter(
     (r) => r.start_date <= todayIso && r.end_date >= todayIso,
   ).length
-  const facturado = reservations
-    .filter((r) => r.status !== "cancelada")
-    .reduce((acc, r) => acc + Number(r.total_price), 0)
+  const facturado = await getTotalFacturadoFromCompletedPagos()
 
   return { total, activas, hoy, facturado }
+}
+
+// ============================================================================
+// Internal helpers (payments-aware stats)
+// ============================================================================
+
+async function getReservationIdsWithCompletedPayment(): Promise<Set<string>> {
+  const { createClient } = await import("@/lib/supabase/server")
+  const supabase = await createClient()
+  const { data } = await supabase
+    .from("pagos")
+    .select("reservation_id")
+    .eq("estado", "completado")
+  const ids = new Set<string>()
+  for (const row of data ?? []) {
+    ids.add(String((row as { reservation_id: string }).reservation_id))
+  }
+  return ids
+}
+
+export async function getReservationsWithPaymentStatus(): Promise<Set<string>> {
+  return getReservationIdsWithCompletedPayment()
+}
+
+async function getTotalFacturadoFromCompletedPagos(): Promise<number> {
+  const { createClient } = await import("@/lib/supabase/server")
+  const supabase = await createClient()
+  const { data } = await supabase
+    .from("pagos")
+    .select("monto")
+    .eq("estado", "completado")
+  return (data ?? []).reduce(
+    (acc, row) => acc + Number((row as { monto: number }).monto),
+    0,
+  )
 }
 
 // ============================================================================
