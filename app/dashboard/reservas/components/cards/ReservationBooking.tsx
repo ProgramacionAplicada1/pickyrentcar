@@ -1,4 +1,5 @@
 "use client";
+import type { Reservation } from "../../types/reservation"
 
 import {
   FaCalendarAlt,

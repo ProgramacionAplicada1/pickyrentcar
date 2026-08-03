@@ -1,87 +1,158 @@
-"use client";
+import type { IconType } from "react-icons";
+
 import {
   FaCalendarAlt,
-  FaCarSide,
-  FaMoneyBillWave,
+  FaCar,
   FaClock,
+  FaMoneyBillWave,
 } from "react-icons/fa";
 
-type ReservationStat = {
-  label: string;
+export interface ReservationStatsData {
+  total: number;
+  active: number;
+  today: number;
+  billed: number;
+
+  activePercentage: number;
+  todayPercentage: number;
+  billedPercentage: number;
+}
+
+interface ReservationStatsProps {
+  stats: ReservationStatsData;
+}
+
+interface StatCard {
+  title: string;
   value: string;
-  icon: React.ElementType;
-  accent: string;
-  bg: string;
-  text: string;
-};
+  progress: number;
+  icon: IconType;
+  borderClass: string;
+  iconClass: string;
+  progressClass: string;
+}
 
-const stats: ReservationStat[] = [
-  {
-    label: "Reservas totales",
-    value: "128",
-    icon: FaCalendarAlt,
-    accent: "border-blue-500/30",
-    bg: "bg-blue-500/10",
-    text: "text-blue-500",
-  },
-  {
-    label: "Activas",
-    value: "15",
-    icon: FaCarSide,
-    accent: "border-emerald-500/30",
-    bg: "bg-emerald-500/10",
-    text: "text-emerald-500",
-  },
-  {
-    label: "Hoy",
-    value: "6",
-    icon: FaClock,
-    accent: "border-amber-500/30",
-    bg: "bg-amber-500/10",
-    text: "text-amber-500",
-  },
-  {
-    label: "Facturado",
-    value: "RD$480,000",
-    icon: FaMoneyBillWave,
-    accent: "border-cyan-500/30",
-    bg: "bg-cyan-500/10",
-    text: "text-cyan-500",
-  },
-];
+function formatCurrency(value: number) {
+  return new Intl.NumberFormat("es-DO", {
+    style: "currency",
+    currency: "DOP",
+    maximumFractionDigits: 0,
+  }).format(value);
+}
 
-export default function ReservationStats() {
+function normalizePercentage(value: number) {
+  if (!Number.isFinite(value)) {
+    return 0;
+  }
+
+  return Math.min(100, Math.max(0, value));
+}
+
+export default function ReservationStats({
+  stats,
+}: ReservationStatsProps) {
+  const cards: StatCard[] = [
+    {
+      title: "Reservas totales",
+      value: stats.total.toLocaleString("es-DO"),
+      progress: stats.total > 0 ? 100 : 0,
+      icon: FaCalendarAlt,
+      borderClass: "border-blue-200",
+      iconClass: "bg-blue-50 text-blue-600",
+      progressClass: "bg-blue-500",
+    },
+    {
+      title: "Activas",
+      value: stats.active.toLocaleString("es-DO"),
+      progress: stats.activePercentage,
+      icon: FaCar,
+      borderClass: "border-emerald-200",
+      iconClass: "bg-emerald-50 text-emerald-600",
+      progressClass: "bg-emerald-500",
+    },
+    {
+      title: "Hoy",
+      value: stats.today.toLocaleString("es-DO"),
+      progress: stats.todayPercentage,
+      icon: FaClock,
+      borderClass: "border-amber-200",
+      iconClass: "bg-amber-50 text-amber-600",
+      progressClass: "bg-amber-500",
+    },
+    {
+      title: "Facturado",
+      value: formatCurrency(stats.billed),
+      progress: stats.billedPercentage,
+      icon: FaMoneyBillWave,
+      borderClass: "border-cyan-200",
+      iconClass: "bg-cyan-50 text-cyan-600",
+      progressClass: "bg-cyan-500",
+    },
+  ];
+
   return (
-    <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-      {stats.map((stat) => {
-        const Icon = stat.icon;
+    <section>
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        {cards.map((card) => {
+          const Icon = card.icon;
+          const progress = normalizePercentage(card.progress);
 
-        return (
-          <article
-            key={stat.label}
-            className={`rounded-3xl border ${stat.accent} bg-white p-5 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg`}
-          >
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <p className="text-sm font-medium text-slate-500">
-                  {stat.label}
-                </p>
-                <h3 className="mt-3 text-3xl font-bold tracking-tight text-slate-900">
-                  {stat.value}
-                </h3>
+          return (
+            <article
+              key={card.title}
+              className={`
+                rounded-3xl
+                border
+                ${card.borderClass}
+                bg-white
+                p-5
+                shadow-sm
+                transition
+                duration-300
+                hover:-translate-y-1
+                hover:shadow-lg
+              `}
+            >
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <p className="text-sm font-medium text-slate-500">
+                    {card.title}
+                  </p>
+
+                  <p className="mt-3 text-3xl font-bold tracking-tight text-slate-950">
+                    {card.value}
+                  </p>
+                </div>
+
+                <div
+                  className={`
+                    flex
+                    h-14
+                    w-14
+                    shrink-0
+                    items-center
+                    justify-center
+                    rounded-2xl
+                    text-xl
+                    ${card.iconClass}
+                  `}
+                >
+                  <Icon />
+                </div>
               </div>
 
-              <div className={`flex h-12 w-12 items-center justify-center rounded-2xl ${stat.bg}`}>
-                <Icon className={`text-lg ${stat.text}`} />
+              <div className="mt-6 h-1.5 overflow-hidden rounded-full bg-slate-100">
+                <div
+                  className={`h-full rounded-full transition-all duration-500 ${card.progressClass}`}
+                  style={{
+                    width: `${progress}%`,
+                  }}
+                />
               </div>
-            </div>
-
-            <div className="mt-4 h-1.5 w-full rounded-full bg-slate-100">
-              <div className="h-1.5 w-2/3 rounded-full bg-gradient-to-r from-slate-900 to-slate-600" />
-            </div>
-          </article>
-        );
-      })}
+            </article>
+          );
+        })}
+      </div>
     </section>
   );
 }
