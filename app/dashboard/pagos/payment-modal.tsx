@@ -87,6 +87,8 @@ export function PaymentAction() {
   const [isOpen, setIsOpen] = React.useState(false)
 
   const [reservations, setReservations] = React.useState<ReservationOption[]>([])
+  // nuevo estado para saber si las reservas todavia estan cargando
+  const [isLoadingReservations, setIsLoadingReservations] = React.useState(false)
   const [reservationId, setReservationId] = React.useState("")
   const [monto, setMonto] = React.useState("")
   const [metodo, setMetodo] = React.useState<Metodo>("Tarjeta")
@@ -98,11 +100,20 @@ export function PaymentAction() {
   React.useEffect(() => {
     if (!isOpen) return
     async function fetchReservations() {
+
+       //nuevo activar/desactivar el loading alrededor del fetch
+      setIsLoadingReservations(true)
+      try{
+
+      
       const res = await fetch("/api/pagos/reservations")
       if (res.ok) {
         const data = (await res.json()) as { reservations: ReservationOption[] }
         setReservations(data.reservations)
       }
+    } finally {
+      setIsLoadingReservations(false)
+    }
     }
     fetchReservations()
   }, [isOpen])
@@ -164,6 +175,10 @@ export function PaymentAction() {
     router.refresh()
   }
 
+  //nuevo un solo flag para bloquear todo el formulario a la vez
+  const isFormBusy = isLoadingReservations || isProcessing
+
+
   return (
     <>
       <Button
@@ -200,9 +215,11 @@ export function PaymentAction() {
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="reservation">Reserva</Label>
+              {/* nuevo Select bloqueado mientras carga, y mensaje de "Cargando..." en vez de saltar directo a "vacio" */}
               <Select
                 value={reservationId}
                 onValueChange={(v) => setReservationId(v ?? "")}
+                disabled={isFormBusy}
               >
                 <SelectTrigger id="reservation">
                   <SelectValue placeholder="Selecciona una reserva" />
@@ -226,6 +243,7 @@ export function PaymentAction() {
 
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="monto">Monto (DOP)</Label>
+              {/* nuevo campos bloqueados mientras el formulario esta ocupado */}
               <Input
                 id="monto"
                 name="monto"
@@ -237,6 +255,7 @@ export function PaymentAction() {
                 onChange={(e) => setMonto(e.currentTarget.value)}
                 placeholder="0.00"
                 required
+                disabled={isFormBusy}
               />
             </div>
 
@@ -292,9 +311,10 @@ export function PaymentAction() {
             )}
 
             <DialogFooter>
+              {/* nuevo "Cancelar" bloqueado solo mientras se envía (no mientras carga reservas), y boton de enviar con isFormBusy */}
               <DialogClose
                 render={
-                  <Button type="button" variant="outline" className="rounded-full" />
+                  <Button type="button" variant="outline" className="rounded-full" disabled={isProcessing} />
                 }
               >
                 Cancelar
@@ -325,6 +345,8 @@ export function PaymentRowActions({ pago }: { pago: PagoListItem }) {
   const [isEditOpen, setIsEditOpen] = React.useState(false)
   const [estado, setEstado] = React.useState<Estado>(pago.estado)
   const [isProcessing, setIsProcessing] = React.useState(false)
+  //nuevo estado para saber si se esta eliminando
+  const [isDeleting, setIsDeleting] = React.useState(false)
   const [error, setError] = React.useState<string | null>(null)
 
   function handleClose() {
@@ -338,6 +360,9 @@ export function PaymentRowActions({ pago }: { pago: PagoListItem }) {
       `¿Eliminar el pago de ${pago.numero ?? "esta reserva"}?`,
     )
     if (!confirmed) return
+
+     //nuevo activar/desactivar el loading alrededor del delete
+    setIsDeleting(true)
     const result = await deletePagoAction(pago.id)
     if (!result.ok) {
       alert(result.error)
