@@ -2,7 +2,7 @@
 
 import { VehiclesGrid } from "@/components/vehicles/vehicles-grid"
 import { VehiclesTable } from "@/components/vehicles/vehicles-table"
-import type { VehicleRow } from "@/components/vehicles/vehicle-card"
+import type { VehicleRow } from "@/components/vehicles/vehicle-row"
 
 type Props = {
   view: "grid" | "table"

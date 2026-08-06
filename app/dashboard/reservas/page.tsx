@@ -1,35 +1,38 @@
-import { HugeiconsIcon } from "@hugeicons/react"
-import { Calendar01Icon } from "@hugeicons/core-free-icons"
-
 import {
-  Card,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
+  adaptReservation,
+  adaptStats,
+} from "@/app/dashboard/reservas/lib/adapter"
+import ReservationHeader from "@/app/dashboard/reservas/components/layout/ReservationHeader"
+import ReservationStats from "@/app/dashboard/reservas/components/layout/ReservationStats"
+import ReservationList from "@/app/dashboard/reservas/components/layout/ReservationList"
+import {
+  getReservationStats,
+  getReservationsWithPaymentStatus,
+  listReservations,
+} from "@/services/reservations"
 
 export const metadata = {
   title: "Reservas · PickyRentCar",
 }
 
-export default function ReservasPage() {
+export default async function ReservationsPage() {
+  const [reservations, stats, paidReservationIds] = await Promise.all([
+    listReservations(),
+    getReservationStats(),
+    getReservationsWithPaymentStatus(),
+  ])
+
+  const adaptedReservations = reservations.map(adaptReservation)
+  const adaptedStats = adaptStats(stats)
+
   return (
-    <div className="flex flex-1 items-center justify-center p-6">
-      <Card className="w-full max-w-lg gap-6 rounded-3xl p-10 text-center shadow-sm">
-        <div className="mx-auto inline-flex size-14 items-center justify-center rounded-full bg-primary/10 text-primary">
-          <HugeiconsIcon
-            icon={Calendar01Icon}
-            strokeWidth={1.75}
-            className="size-7"
-          />
-        </div>
-        <CardHeader className="gap-2 p-0">
-          <CardTitle className="text-2xl">Próximamente</CardTitle>
-          <CardDescription>
-            El módulo de reservas estará disponible en próximas iteraciones.
-          </CardDescription>
-        </CardHeader>
-      </Card>
+    <div className="flex flex-1 flex-col gap-6 p-6">
+      <ReservationHeader />
+      <ReservationStats stats={adaptedStats} />
+      <ReservationList
+        reservations={adaptedReservations}
+        paidReservationIds={paidReservationIds}
+      />
     </div>
   )
 }

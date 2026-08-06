@@ -16,42 +16,13 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { createClient } from "@/lib/supabase/server"
+import { getVehicleStats } from "@/services/vehicles"
 
 type Stat = {
   title: string
   value: string
   icon: React.ComponentProps<typeof HugeiconsIcon>["icon"]
   note: string
-}
-
-async function getVehicleStats() {
-  const supabase = await createClient()
-
-  const [total, available, inUse, maintenance] = await Promise.all([
-    supabase
-      .from("vehicles")
-      .select("*", { count: "exact", head: true }),
-    supabase
-      .from("vehicles")
-      .select("*", { count: "exact", head: true })
-      .eq("status", "available"),
-    supabase
-      .from("vehicles")
-      .select("*", { count: "exact", head: true })
-      .eq("status", "in_use"),
-    supabase
-      .from("vehicles")
-      .select("*", { count: "exact", head: true })
-      .eq("status", "maintenance"),
-  ])
-
-  return {
-    total: total.count ?? 0,
-    available: available.count ?? 0,
-    inUse: inUse.count ?? 0,
-    maintenance: maintenance.count ?? 0,
-  }
 }
 
 export default async function DashboardPage() {

@@ -44,3 +44,4 @@ pnpm-workspace.yaml
 /.agents
 
 package-lock.json
+skills-lock.json

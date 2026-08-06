@@ -6,7 +6,6 @@ import { SidebarLeftIcon } from "@hugeicons/core-free-icons"
 
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
-import { QuickCreateButton } from "@/components/quick-create-button"
 import { useSidebarToggle } from "@/components/sidebar-toggle-context"
 
 const TITLES: Record<string, string> = {
@@ -40,9 +39,6 @@ export function SiteHeader() {
         </Button>
         <Separator orientation="vertical" className="h-4 hidden md:block" />
         <h1 className="text-base font-semibold tracking-tight">{title}</h1>
-      </div>
-      <div className="flex items-center gap-2">
-        <QuickCreateButton />
       </div>
     </header>
   )

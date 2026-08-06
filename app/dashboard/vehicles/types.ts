@@ -11,3 +11,7 @@ export const STATUS_LABELS: Record<VehicleStatus, string> = {
   in_use: "En uso",
   maintenance: "Mantenimiento",
 }
+
+export const MAX_VEHICLE_IMAGES = 5 as const
+
+export type VehicleImageSlot = 1 | 2 | 3 | 4 | 5

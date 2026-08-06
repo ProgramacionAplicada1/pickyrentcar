@@ -133,7 +133,7 @@ export default function Sidebar() {
                         <div className="w-16 h-16 rounded-2xl bg-white flex items-center justify-center shadow-lg p-2">
 
                             <Image
-                                src="/logo-prototipo-3.svg"
+                                src="/peaky-app.svg"
                                 alt="PeakyRent"
                                 width={52}
                                 height={52}

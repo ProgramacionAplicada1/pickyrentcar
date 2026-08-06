@@ -11,9 +11,18 @@ export async function GET(request: NextRequest) {
     const { error } = await supabase.auth.exchangeCodeForSession(code)
 
     if (!error) {
-      return NextResponse.redirect(`${origin}${next}`)
+      const forwardedHost = request.headers.get("x-forwarded-host")
+      const isLocalEnv = process.env.NODE_ENV === "development"
+
+      const redirectUrl = isLocalEnv
+        ? `${origin}${next}`
+        : forwardedHost
+          ? `https://${forwardedHost}${next}`
+          : `${origin}${next}`
+
+      return NextResponse.redirect(redirectUrl)
     }
   }
 
-  return NextResponse.redirect(`${origin}/register?error=auth-callback-failed`)
+  return NextResponse.redirect(`${origin}/login?error=auth-callback-failed`)
 }

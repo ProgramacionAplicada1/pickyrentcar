@@ -29,20 +29,10 @@ import { Button } from "@/components/ui/button"
 
 import { StatusBadge } from "@/components/vehicles/status-badge"
 import { DeleteVehicleDialog } from "@/components/vehicles/delete-vehicle-dialog"
-
-export type VehicleRow = {
-  id: string
-  plate: string
-  brand: string
-  model: string
-  year: number
-  color: string | null
-  seats: number | null
-  status: string
-  notes: string | null
-  image_url: string | null
-  created_at: string
-}
+import {
+  type VehicleRow,
+  getCoverUrl,
+} from "@/components/vehicles/vehicle-row"
 
 type Props = {
   vehicles: VehicleRow[]
@@ -65,7 +55,7 @@ export function VehiclesTable({ vehicles }: Props) {
         </TableHeader>
         <TableBody>
           {vehicles.map((vehicle) => (
-            <VehicleRow key={vehicle.id} vehicle={vehicle} />
+            <RowItem key={vehicle.id} vehicle={vehicle} />
           ))}
         </TableBody>
       </Table>
@@ -73,15 +63,16 @@ export function VehiclesTable({ vehicles }: Props) {
   )
 }
 
-function VehicleRow({ vehicle }: { vehicle: VehicleRow }) {
+function RowItem({ vehicle }: { vehicle: VehicleRow }) {
   const [dialogOpen, setDialogOpen] = React.useState(false)
+  const cover = getCoverUrl(vehicle)
 
   return (
     <TableRow>
       <TableCell>
         <Avatar size="default">
-          {vehicle.image_url ? (
-            <AvatarImage src={vehicle.image_url} alt={vehicle.plate} />
+          {cover ? (
+            <AvatarImage src={cover} alt={vehicle.plate} />
           ) : null}
           <AvatarFallback>
             <HugeiconsIcon
@@ -100,11 +91,15 @@ function VehicleRow({ vehicle }: { vehicle: VehicleRow }) {
           <span className="font-medium text-foreground">
             {vehicle.brand} {vehicle.model}
           </span>
-          {vehicle.color && (
+          {vehicle.nombre ? (
+            <span className="text-xs font-medium text-primary italic">
+              &ldquo;{vehicle.nombre}&rdquo;
+            </span>
+          ) : vehicle.color ? (
             <span className="text-xs text-muted-foreground">
               {vehicle.color}
             </span>
-          )}
+          ) : null}
         </div>
       </TableCell>
       <TableCell className="text-muted-foreground">{vehicle.year}</TableCell>
