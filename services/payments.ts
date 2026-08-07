@@ -248,6 +248,41 @@ export async function createPago(
   }
 }
 
+
+export async function getIncomeByMonth() {
+  const pagos = await listPagos();
+
+  const meses = [
+    "Ene",
+    "Feb",
+    "Mar",
+    "Abr",
+    "May",
+    "Jun",
+    "Jul",
+    "Ago",
+    "Sep",
+    "Oct",
+    "Nov",
+    "Dic",
+  ];
+
+  const ingresos = Array.from({ length: 12 }, (_, index) => ({
+    mes: meses[index],
+    ingresos: 0,
+  }));
+
+  pagos.forEach((pago) => {
+    if (pago.estado !== "completado") return;
+
+    const mes = new Date(pago.created_at).getMonth();
+
+    ingresos[mes].ingresos += pago.monto;
+  });
+
+  return ingresos;
+}
+
 export async function updatePagoEstado(
   pagoId: string,
   estado: PagoEstado,
@@ -350,4 +385,6 @@ export async function deletePago(pagoId: string): Promise<PagoMutationResult> {
       updated_at: "",
     },
   }
+
+  
 }

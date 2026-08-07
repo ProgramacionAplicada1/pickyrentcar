@@ -70,12 +70,12 @@ function normalizeImageUrls(value: unknown): string[] {
 // Queries
 // ============================================================================
 
-export async function listReservations(): Promise<ReservationRow[]> {
+export async function listReservations( startDate?: string,endDate?: string): Promise<ReservationRow[]> {
   const supabase = await createClient()
   const {
     data: { user },
-  } = await supabase.auth.getUser()
-  if (!user) return []
+  } = await supabase.auth.getUser();
+  if (!user) return [];
 
   // Defense-in-depth: pre-fetch IDs de vehículos del admin y filtrar
   // por ellos. Aunque RLS esté roto (ej. política huérfana), esto limita
@@ -83,27 +83,23 @@ export async function listReservations(): Promise<ReservationRow[]> {
   const { data: ownedVehicles } = await supabase
     .from("vehicles")
     .select("id")
-    .eq("created_by", user.id)
-  const ownedVehicleIds = (ownedVehicles ?? []).map(
-    (v) => String((v as { id: string }).id),
-  )
-  if (ownedVehicleIds.length === 0) return []
+    .eq("created_by", user.id);
+  const ownedVehicleIds = (ownedVehicles ?? []).map((v) =>
+    String((v as { id: string }).id),
+  );
+  if (ownedVehicleIds.length === 0) return [];
 
   const { data } = await supabase
     .from("reservations")
-    .select(
-      "id, numero, client_name, client_email, client_phone, start_date, end_date, days, daily_price, total_price, status, notes, location, created_at, updated_at, vehicles:vehicle_id(id, brand, model, year, plate, image_urls, nombre, status, category, transmission, fuel_type)",
-    )
+    .select("id, numero, client_name, client_email, client_phone, start_date, end_date, days, daily_price, total_price, status, notes, location, created_at, updated_at, vehicles:vehicle_id(id, brand, model, year, plate, image_urls, nombre, status, category, transmission, fuel_type)", )
     .in("vehicle_id", ownedVehicleIds)
-    .order("created_at", { ascending: false })
+    .order("created_at", { ascending: false });
 
   return (data ?? []).map((row) => {
-    const rawVehicle = (
-      row as { vehicles: unknown }
-    ).vehicles
+    const rawVehicle = (row as { vehicles: unknown }).vehicles;
     const vehicle = Array.isArray(rawVehicle)
       ? rawVehicle[0]
-      : (rawVehicle as ReservationRow["vehicle"] | null)
+      : (rawVehicle as ReservationRow["vehicle"] | null);
 
     return {
       id: String((row as { id: string }).id),
@@ -135,8 +131,8 @@ export async function listReservations(): Promise<ReservationRow[]> {
         transmission: String(vehicle?.transmission ?? ""),
         fuel_type: String(vehicle?.fuel_type ?? ""),
       },
-    } satisfies ReservationRow
-  })
+    } satisfies ReservationRow;
+  });
 }
 
 export async function getReservationById(
