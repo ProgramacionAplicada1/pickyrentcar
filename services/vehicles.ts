@@ -252,6 +252,29 @@ export async function getVehicleStats(): Promise<VehicleStats> {
 // Mutations
 // ============================================================================
 
+export async function getMostRentedVehicles() {
+  const vehicles = await listVehicles();
+  const supabase = await createClient();
+
+  const result = [];
+
+  for (const vehicle of vehicles) {
+    const { count } = await supabase
+      .from("reservations")
+      .select("*", { count: "exact", head: true })
+      .eq("vehicle_id", vehicle.id);
+
+    result.push({
+      nombre: vehicle.nombre ?? `${vehicle.brand} ${vehicle.model}`,
+      reservas: count ?? 0,
+    });
+  }
+
+  return result.sort((a, b) => b.reservas - a.reservas).slice(0, 5);
+}
+
+
+
 export async function createVehicle(
   _prev: VehicleActionResult | undefined,
   formData: FormData,

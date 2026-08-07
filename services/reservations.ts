@@ -203,6 +203,26 @@ export async function getReservationById(
   } satisfies ReservationRow
 }
 
+
+export async function getReservationsByStatus() {
+  const reservations = await listReservations();
+
+  const estados = [
+    "pendiente",
+    "confirmada",
+    "activa",
+    "finalizada",
+    "cancelada",
+  ];
+
+  return estados.map((estado) => ({
+    estado,
+    cantidad: reservations.filter(
+      (reservation) => reservation.status === estado,
+    ).length,
+  }));
+}
+
 export async function getReservationStats(): Promise<ReservationStats> {
   const reservations = await listReservations()
   const todayIso = new Date().toISOString().slice(0, 10)
