@@ -1,13 +1,6 @@
 import { ClientListItem } from "@/services/clients";
 
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import {Table,TableBody, TableCell, TableHead, TableHeader, TableRow} from "@/components/ui/table";
 
 import { ClientsStatusBadge } from "./clients-status-badge";
 import { ClientsTypeBadge } from "./clients-type-badge";

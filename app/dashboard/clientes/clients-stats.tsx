@@ -1,20 +1,13 @@
 import { Card, CardContent } from "@/components/ui/card";
-
 import type { ClientListItem } from "@/services/clients";
-
-import {
-  FaUsers,
-  FaUserCheck,
-  FaUserClock,
-  FaUserFriends,
-} from "react-icons/fa";
+import {FaUsers, FaUserCheck, FaUserClock, FaUserFriends,} from "react-icons/fa";
 
 type Props = {
   clients: ClientListItem[];
 };
 
 export function ClientsStats({ clients }: Props) {
-  const total = clients.length;
+  const total = clients.length
 
   const registrados = clients.filter(
     (client) => client.tipo === "registrado",

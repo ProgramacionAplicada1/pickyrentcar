@@ -1,17 +1,8 @@
 "use client";
 
 import { HugeiconsIcon } from "@hugeicons/react";
-import {
-  ViewIcon,
-  MoreHorizontalCircle01Icon,
-  EyeIcon,
-} from "@hugeicons/core-free-icons";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import {ViewIcon, MoreHorizontalCircle01Icon, EyeIcon,} from "@hugeicons/core-free-icons";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger} from "@/components/ui/dropdown-menu";
 
 type Props = {
   clientId: string | null;

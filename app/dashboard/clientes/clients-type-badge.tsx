@@ -9,10 +9,7 @@ export function ClientsTypeBadge({ type }: Props) {
     switch (type) {
         case "registrado":
             return (
-                <Badge
-                    variant="secondary"
-                    className="rounded-full bg-emerald-100 text-emerald-700 font-semibold"
-                >
+                <Badge  variant="secondary"  className="rounded-full bg-emerald-100 text-emerald-700 font-semibold">
                     Registrado
                 </Badge>
             );
@@ -20,9 +17,7 @@ export function ClientsTypeBadge({ type }: Props) {
         case "invitado":
             return (
                 <Badge
-                    variant="secondary"
-                    className="rounded-full bg-slate-100 text-slate-700 font-semibold"
-                >
+                    variant="secondary" className="rounded-full bg-slate-100 text-slate-700 font-semibold" >
                     Invitado
                 </Badge>
             );
