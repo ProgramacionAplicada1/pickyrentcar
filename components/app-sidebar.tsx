@@ -74,7 +74,7 @@ type SidebarUser = {
 }
 
 export function AppSidebar() {
-  const { isOpen } = useSidebarToggle()
+  const { isOpen, mobileOpen, closeMobile  } = useSidebarToggle()
   const pathname = usePathname()
   const [user, setUser] = React.useState<SidebarUser | null>(null)
 
@@ -114,12 +114,22 @@ export function AppSidebar() {
     : "..."
 
   return (
-    <aside
-      className={cn(
-        "shrink-0 overflow-hidden border-r border-slate-800 bg-gradient-to-b from-slate-900 via-slate-950 to-black text-white transition-[width] duration-200 ease-linear",
-        isOpen ? "w-[18rem]" : "w-0",
+    <>
+      {mobileOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm md:hidden"
+          onClick={closeMobile}
+        />
       )}
-    >
+
+      <aside
+        className={cn(
+          "fixed inset-y-0 left-0 z-50 w-[18rem] shrink-0 overflow-hidden border-r border-slate-800 bg-gradient-to-b from-slate-900 via-slate-950 to-black text-white transition-transform duration-300 ease-in-out",
+          mobileOpen ? "translate-x-0" : "-translate-x-full",
+          "md:static md:translate-x-0 md:transition-[width] md:duration-200 md:ease-linear",
+          isOpen ? "md:w-[18rem]" : "md:w-0",
+        )}
+      >
       <div className="flex h-screen w-[18rem] flex-col">
         {/* Logo */}
         <div className="border-b border-slate-800 px-8 py-7">
@@ -221,5 +231,6 @@ export function AppSidebar() {
         </div>
       </div>
     </aside>
+    </>
   )
 }

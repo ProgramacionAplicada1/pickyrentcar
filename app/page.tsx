@@ -83,7 +83,7 @@ export default async function LandingPage({
         </div>
       </header>
 
-      <section className="relative h-screen overflow-hidden">
+      <section className="relative h-[60vh] md:h-screen overflow-hidden">
         <CarruselFotos />
 
         <div className="absolute inset-0 bg-black/15" />
