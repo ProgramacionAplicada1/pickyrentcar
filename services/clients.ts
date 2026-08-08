@@ -1,24 +1,25 @@
 import { createClient } from "@/lib/supabase/server";
 
-export type ClientType = "registrado" | "invitado";
+export type TipoCliente = "registrado" | "invitado";
 
-type ClientAccumulator = ClientListItem & {
+type ClienteAcumulador = CLIENTE & {
   reservationStatuses: string[];
 };
 
-export type ClientStatus = "pendiente_pago" | "activo" | "finalizado";
+export type EstadoCliente = "pendiente_pago" | "activo" | "finalizado";
 
-export type ClientListItem = {
-  id: string | null;
-  nombre: string;
-  email: string;
-  telefono: string;
-  tipo: ClientType;
-  estado: ClientStatus;
-  reservas: number;
-  totalPagado: number;
-  ultimaReserva: string;
-};
+export type CLIENTE = {
+  id: string | null,
+  nombre: string,
+  email: string,
+  telefono: string,
+  tipo: TipoCliente,
+  estado: EstadoCliente,
+  reservas: number,
+  totalPagado: number,
+  ultimaReserva: string,
+}
+
 
 export async function getClientsByOwner() {
   const supabase = await createClient();
@@ -45,66 +46,64 @@ export async function getClientsByOwner() {
     return [];
   }
 
-  const { data: reservations, error: reservationsError } = await supabase
-
+  const { data: reservaciones, error: reservationsError } = await supabase
     .from("reservations")
     .select("*")
     .in("vehicle_id", vehicleIds);
 
-  if (reservationsError || !reservations) {
+  if (reservationsError || !reservaciones) {
     return [];
   }
 
- const clientsMap = new Map<string, ClientAccumulator>();
+  const clientsMap = new Map<string, ClienteAcumulador>();
 
-  for (const reservation of reservations) {
-    const key = reservation.client_id
-      ? reservation.client_id
-      : (reservation.client_email?.toLowerCase() ?? reservation.client_phone);
+  for (const reservacion of reservaciones) {
+    const key = reservacion.client_id
+      ? reservacion.client_id
+      : (reservacion.client_email?.toLowerCase() ?? reservacion.client_phone);
 
     if (!clientsMap.has(key)) {
       clientsMap.set(key, {
-        id: reservation.client_id,
-        nombre: reservation.client_name,
-        email: reservation.client_email,
-        telefono: reservation.client_phone,
-        tipo: reservation.client_id ? "registrado" : "invitado",
-        
+        id: reservacion.client_id,
+        nombre: reservacion.client_name,
+        email: reservacion.client_email,
+        telefono: reservacion.client_phone,
+        tipo: reservacion.client_id ? "registrado" : "invitado",
+
         estado: "pendiente_pago",
-        
+
         reservas: 0,
         totalPagado: 0,
-        ultimaReserva: reservation.created_at,
-        reservationStatuses: []
+        ultimaReserva: reservacion.created_at,
+        reservationStatuses: [],
       });
     }
 
     const client = clientsMap.get(key)!;
 
-    client.reservas++;
+    client.reservas++
 
-    client.totalPagado += Number(reservation.total_price);
+    client.totalPagado += Number(reservacion.total_price)
 
-    if (new Date(reservation.created_at) > new Date(client.ultimaReserva)) {
-      client.ultimaReserva = reservation.created_at;
+    if (new Date(reservacion.created_at) > new Date(client.ultimaReserva)) {
+      client.ultimaReserva = reservacion.created_at;
     }
-    client.reservationStatuses.push(reservation.status);
+    client.reservationStatuses.push(reservacion.status);
   }
-    
-    for (const client of clientsMap.values()) {
-      if (client.reservationStatuses.includes("activa")) {
-        client.estado = "activo";
-      } else if (
-        client.reservationStatuses.every((status) => status === "finalizada")
-      ) {
-        client.estado = "finalizado";
-      } else {
-        client.estado = "pendiente_pago";
-      }
+
+  for (const client of clientsMap.values()) {
+    if (client.reservationStatuses.includes("activa")) {
+      client.estado = "activo";
+    } else if (
+      client.reservationStatuses.every((status) => status === "finalizada")
+    ) {
+      client.estado = "finalizado"
+    } else {
+      client.estado = "pendiente_pago"
     }
-    
-    
-    return Array.from(clientsMap.values()).map(
-      ({ reservationStatuses, ...client }) => client,
-    );
+  }
+
+  return Array.from(clientsMap.values()).map(
+    ({ reservationStatuses, ...client }) => client,
+  );
 }
