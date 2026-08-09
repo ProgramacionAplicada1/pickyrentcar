@@ -125,6 +125,7 @@ export default function ReservationList({
 
       <ReservationDrawer
         reservation={selectedReservation}
+        reservations={reservations}
         open={drawerOpen}
         onClose={handleCloseDrawer}
       />
