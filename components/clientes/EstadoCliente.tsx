@@ -1,25 +1,25 @@
 import { Badge } from "@/components/ui/badge";
-import { ClientStatus } from "@/services/clients";
+import { EstadoCliente } from "@/services/clients";
 
-type Props = {
-  status: ClientStatus;
-};
+type Props = { status: EstadoCliente }
 
 export function ClientsStatusBadge({ status }: Props) {
   switch (status) {
     case "activo":
       return (
         <Badge className="bg-green-100 text-green-700 hover:bg-green-100 font-semibold">
-         Reserva en curso
+          Reserva en curso
         </Badge>
-      );
+      )
+    
 
     case "finalizado":
       return (
         <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-100 font-semibold">
           Finalizado
         </Badge>
-      );
+      )
+    
 
     default:
       return (
@@ -29,6 +29,6 @@ export function ClientsStatusBadge({ status }: Props) {
         >
           Pendiente de pago
         </Badge>
-      );
+      )
   }
 }

@@ -14,15 +14,17 @@ import {
 } from "@/components/ui/select";
 
 type Props = {
-  search: string;
-  onSearchChange: (value: string) => void;
+  search: string
+  onSearchChange: (value: string) => void
 
-  tipo: string;
-  onTipoChange: (value: string | null) => void;
+  tipo: string
+  onTipoChange: (value: string | null) => void
 
-  estado: string;
-  onEstadoChange: (value: string | null) => void;
-};
+  estado: string
+  onEstadoChange: (value: string | null) => void
+}
+
+
 
 export function ClientsToolbar({
   search,
@@ -32,6 +34,8 @@ export function ClientsToolbar({
   estado,
   onEstadoChange,
 }: Props) {
+
+
   return (
     <div className="flex flex-col gap-4 rounded-2xl border bg-card p-4 md:flex-row md:items-center md:justify-between">
       <div className="relative w-full md:max-w-sm">
@@ -41,6 +45,7 @@ export function ClientsToolbar({
           className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
         />
 
+        
         <Input
           placeholder="Buscar cliente..."
           value={search}

@@ -51,7 +51,7 @@ export default function ReservationList({
         case "Activas":
           return r.estado === "Activa";
         case "Pendientes":
-          return r.estado === "Pendiente";
+          return r.estado === "Pendiente" || r.estado === "Pendiente de pago";
         case "Finalizadas":
           return r.estado === "Finalizada";
         case "Canceladas":

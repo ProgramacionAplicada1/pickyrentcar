@@ -1,7 +1,7 @@
-"use client"
-
-import * as React from "react"
-import { HugeiconsIcon } from "@hugeicons/react"
+"use client";
+import { useRouter } from "next/navigation";
+import * as React from "react";
+import { HugeiconsIcon } from "@hugeicons/react";
 import {
   ArrowRight01Icon,
   Calendar01Icon,
@@ -9,55 +9,77 @@ import {
   Flag01Icon,
   Loading03Icon,
   Time01Icon,
-} from "@hugeicons/core-free-icons"
+} from "@hugeicons/core-free-icons";
 
-import { Button } from "@/components/ui/button"
-import { Spinner } from "@/components/ui/spinner"
+import { Button } from "@/components/ui/button";
+import { Spinner } from "@/components/ui/spinner";
 import {
   advanceReservationStatus,
   cancelReservation,
-} from "@/app/dashboard/reservas/actions"
+} from "@/app/dashboard/reservas/actions";
 import {
   RESERVATION_STATUS_LABELS,
   nextReservationStatus,
   type ReservationStatus,
-} from "@/lib/vehicles/reservation-status"
+} from "@/lib/vehicles/reservation-status";
 
 type Props = {
-  reservationId: string
-  status: ReservationStatus | string
-}
+  reservationId: string;
+  status: ReservationStatus | string;
+  hasCompletedPayment: boolean;
+};
 
-export function ReservationStatusActions({ reservationId, status }: Props) {
-  const [advancePending, setAdvancePending] = React.useState(false)
-  const [cancelPending, setCancelPending] = React.useState(false)
+export function ReservationStatusActions({
+  reservationId,
+  hasCompletedPayment,
+  status,
+}: Props) {
+  const router = useRouter();
+  const [advancePending, setAdvancePending] = React.useState(false);
+  const [cancelPending, setCancelPending] = React.useState(false);
 
   const safeStatus: ReservationStatus =
     status === "pendiente" ||
-    status === "confirmada" ||
+    status === "pendiente_pago" ||
     status === "activa" ||
     status === "finalizada" ||
     status === "cancelada"
       ? status
-      : "pendiente"
+      : "pendiente";
 
-  const next = nextReservationStatus(safeStatus)
+  const next = nextReservationStatus(safeStatus);
 
   async function handleAdvance() {
-    setAdvancePending(true)
+    setAdvancePending(true);
+
     try {
-      await advanceReservationStatus(reservationId)
+      const result = await advanceReservationStatus(reservationId);
+
+      console.log("RESULTADO AVANCE:", result);
+
+      if (result.ok) {
+        router.refresh();
+      } else {
+        alert(result.error);
+      }
     } finally {
-      setAdvancePending(false)
+      setAdvancePending(false);
     }
   }
 
   async function handleCancel() {
-    setCancelPending(true)
+    setCancelPending(true);
+
     try {
-      await cancelReservation(reservationId)
+      const result = await cancelReservation(reservationId);
+
+      if (result.ok) {
+        router.refresh();
+      } else {
+        console.error(result.error);
+      }
     } finally {
-      setCancelPending(false)
+      setCancelPending(false);
     }
   }
 
@@ -68,21 +90,21 @@ export function ReservationStatusActions({ reservationId, status }: Props) {
         {safeStatus === "cancelada" ? "cancelada" : "finalizada"}. No hay más
         acciones disponibles.
       </p>
-    )
+    );
   }
 
   const advanceIcon: React.ComponentProps<typeof HugeiconsIcon>["icon"] =
     safeStatus === "pendiente"
       ? CheckmarkCircle02Icon
-      : safeStatus === "confirmada"
+      : safeStatus === "pendiente_pago"
         ? Time01Icon
-        : Flag01Icon
+        : Flag01Icon;
   const advanceLabel =
     safeStatus === "pendiente"
-      ? "Marcar como pagada / confirmada"
-      : safeStatus === "confirmada"
-        ? "Marcar como activa (entrega)"
-        : "Marcar como finalizada"
+      ? "Aceptar reserva"
+      : safeStatus === "pendiente_pago"
+        ? "Marcar como activa"
+        : "Marcar como finalizada";
 
   return (
     <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
@@ -92,7 +114,11 @@ export function ReservationStatusActions({ reservationId, status }: Props) {
           variant="default"
           size="lg"
           className="rounded-full"
-          disabled={advancePending || cancelPending}
+          disabled={
+            advancePending ||
+            cancelPending ||
+            (safeStatus === "pendiente_pago" && !hasCompletedPayment)
+          }
           onClick={handleAdvance}
         >
           {advancePending ? (
@@ -138,5 +164,5 @@ export function ReservationStatusActions({ reservationId, status }: Props) {
         />
       </p>
     </div>
-  )
+  );
 }

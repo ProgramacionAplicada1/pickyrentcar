@@ -1,17 +1,24 @@
-import { ClientListItem } from "@/services/clients";
+import { CLIENTE } from "@/services/clients";
 
-import {Table,TableBody, TableCell, TableHead, TableHeader, TableRow} from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
-import { ClientsStatusBadge } from "./clients-status-badge";
-import { ClientsTypeBadge } from "./clients-type-badge";
-import { ClientsActions } from "./clients-actions";
+import { ClientsStatusBadge } from "./EstadoCliente";
+import { ClientsTypeBadge } from "./TipoCliente";
+import { ClientsActions } from "./DetalleClientes";
 
-type Props = {
-  clients: ClientListItem[];
-};
+type Props = { clients: CLIENTE[] }
+
 
 export function ClientsTable({ clients }: Props) {
-    
+
+
   return (
     <Table>
       <TableHeader className="border-y bg-zinc-50">
@@ -25,6 +32,8 @@ export function ClientsTable({ clients }: Props) {
           <TableHead className="w-[70px]" />
         </TableRow>
       </TableHeader>
+
+      
 
       <TableBody>
         {clients.map((client) => (

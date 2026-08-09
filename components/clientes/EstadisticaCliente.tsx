@@ -1,13 +1,11 @@
 import { Card, CardContent } from "@/components/ui/card";
-import type { ClientListItem } from "@/services/clients";
-import {FaUsers, FaUserCheck, FaUserClock, FaUserFriends,} from "react-icons/fa";
+import type { CLIENTE } from "@/services/clients";
+import { FaUsers, FaUserCheck,FaUserClock, FaUserFriends} from "react-icons/fa"
 
-type Props = {
-  clients: ClientListItem[];
-};
+type Props = { clients: CLIENTE[]}
 
 export function ClientsStats({ clients }: Props) {
-  const total = clients.length
+  const total = clients.length;
 
   const registrados = clients.filter(
     (client) => client.tipo === "registrado",
@@ -52,7 +50,9 @@ export function ClientsStats({ clients }: Props) {
       text: "text-cyan-500",
       icon: FaUserClock,
     },
-  ];
+  ]
+
+
 
   return (
     <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
@@ -88,8 +88,8 @@ export function ClientsStats({ clients }: Props) {
               </div>
             </CardContent>
           </Card>
-        );
+        )
       })}
     </section>
-  );
+  )
 }
