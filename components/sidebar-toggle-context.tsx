@@ -6,6 +6,9 @@ type SidebarCtx = {
   isOpen: boolean
   toggle: () => void
   close: () => void
+  mobileOpen: boolean
+  toggleMobile: () => void
+  closeMobile: () => void
 }
 
 const SidebarContext = React.createContext<SidebarCtx | null>(null)
@@ -16,14 +19,18 @@ export function SidebarToggleProvider({
   children: React.ReactNode
 }) {
   const [isOpen, setIsOpen] = React.useState(true)
+  const [mobileOpen, setMobileOpen] = React.useState(false)
 
   const value = React.useMemo<SidebarCtx>(
     () => ({
       isOpen,
       toggle: () => setIsOpen((v) => !v),
       close: () => setIsOpen(false),
+      mobileOpen,
+      toggleMobile: () => setMobileOpen((v) => !v),
+      closeMobile: () => setMobileOpen(false),
     }),
-    [isOpen],
+    [isOpen, mobileOpen],
   )
 
   return (
