@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -78,9 +79,6 @@ const METODO_ICON: Record<Metodo, React.ComponentProps<typeof HugeiconsIcon>["ic
   Transferencia: BankIcon,
 }
 
-// ============================================================================
-// Registrar Pago
-// ============================================================================
 
 export function PaymentAction() {
   const router = useRouter()
@@ -336,9 +334,6 @@ export function PaymentAction() {
   )
 }
 
-// ============================================================================
-// Acciones por fila
-// ============================================================================
 
 export function PaymentRowActions({ pago }: { pago: PagoListItem }) {
   const router = useRouter()
@@ -492,8 +487,7 @@ export function PaymentRowActions({ pago }: { pago: PagoListItem }) {
   )
 }
 
-// ============================================================================
-// Re-exports for the page
-// ============================================================================
+
 
 export type { PagoListItem }
+
