@@ -17,6 +17,11 @@ const statusConfig: Record<
     dot: "bg-emerald-500",
     badge: "border border-emerald-200 bg-emerald-50 text-emerald-700",
   },
+  "Pendiente de pago": {
+    text: "Pendiente de pago",
+    dot: "bg-orange-500",
+    badge: "border border-orange-200 bg-orange-50 text-orange-700",
+  },
   Pendiente: {
     text: "Pendiente",
     dot: "bg-amber-500",

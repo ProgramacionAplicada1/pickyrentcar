@@ -13,22 +13,24 @@ import type { ReservationRow, ReservationStats } from "@/services/reservations"
 
 type AdaptedStatus = Extract<
   AdaptedReservationStatus,
-  "Pendiente" | "Activa" | "Finalizada" | "Cancelada"
+  "Pendiente" | "Pendiente de pago" | "Activa" | "Finalizada" | "Cancelada"
 >
 
 function adaptStatus(dbStatus: string): AdaptedStatus {
   switch (dbStatus) {
     case "pendiente":
-      return "Pendiente"
+      return "Pendiente";
+    case "pendiente_pago":
+      return "Pendiente de pago";
     case "confirmada":
     case "activa":
-      return "Activa"
+      return "Activa";
     case "finalizada":
-      return "Finalizada"
+      return "Finalizada";
     case "cancelada":
-      return "Cancelada"
+      return "Cancelada";
     default:
-      return "Pendiente"
+      return "Pendiente";
   }
 }
 
@@ -37,9 +39,10 @@ function adaptStatus(dbStatus: string): AdaptedStatus {
 // ============================================================================
 
 function adaptPaymentStatus(dbStatus: string): PaymentStatus {
-  if (dbStatus === "pendiente" || dbStatus === "confirmada") return "Pendiente"
-  if (dbStatus === "cancelada") return "Pendiente"
-  return "Pagado"
+  if (dbStatus === "pendiente") return "Pendiente";
+  if (dbStatus === "pendiente_pago") return "Pendiente";
+  if (dbStatus === "cancelada") return "Pendiente";
+  return "Pagado";
 }
 
 const DEFAULT_PAYMENT_METHOD: PaymentMethod = "Efectivo"

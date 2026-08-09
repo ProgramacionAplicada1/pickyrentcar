@@ -110,7 +110,7 @@ export default function ReservationActions({
 
   function handlePrint() {
     if (typeof window !== "undefined") {
-      window.print()
+      window.print() 
     }
   }
 
@@ -118,9 +118,11 @@ export default function ReservationActions({
     router.push(`/dashboard/reservas/${reservation.id}`)
   }
 
-  const isFinal = reservation.estado === "Cancelada" || reservation.estado === "Finalizada"
-  const isPending = reservation.estado === "Pendiente"
-  const requiresPaymentToAdvance = isPending && !hasCompletedPayment
+const isFinal = reservation.estado === "Cancelada" || reservation.estado === "Finalizada"
+const isPending = reservation.estado === "Pendiente"
+const isPendingPayment = reservation.estado === "Pendiente de pago"
+
+const requiresPaymentToAdvance = isPendingPayment && !hasCompletedPayment;
 
   return (
     <div className="flex items-center justify-end gap-2">

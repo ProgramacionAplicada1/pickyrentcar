@@ -55,9 +55,17 @@ export async function getClientsByOwner() {
     return [];
   }
 
+  const estadosValidos = ["pendiente_pago", "activa", "finalizada"]
+
   const clientsMap = new Map<string, ClienteAcumulador>();
 
+
   for (const reservacion of reservaciones) {
+
+    if (!estadosValidos.includes(reservacion.status)) {
+      continue
+    }
+
     const key = reservacion.client_id
       ? reservacion.client_id
       : (reservacion.client_email?.toLowerCase() ?? reservacion.client_phone);
