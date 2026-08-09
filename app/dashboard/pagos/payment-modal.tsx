@@ -1,250 +1,493 @@
+
 "use client"
 
-import { useState, useEffect } from "react"
+import * as React from "react"
 import { useRouter } from "next/navigation"
 import { HugeiconsIcon } from "@hugeicons/react"
-import { Cancel01Icon, CreditCardIcon, Wallet01Icon, BankIcon, Add01Icon, Edit01Icon, Delete01Icon } from "@hugeicons/core-free-icons"
-import { Button } from "@/components/ui/button"
-import { createClient } from "@/lib/supabase/client"
+import {
+  Add01Icon,
+  BankIcon,
+  Cancel01Icon,
+  CreditCardIcon,
+  Delete01Icon,
+  Edit01Icon,
+  Wallet01Icon,
+} from "@hugeicons/core-free-icons"
 
-type PaymentMethod = "Tarjeta" | "Efectivo" | "Transferencia"
+import { Button } from "@/components/ui/button"
+import { Spinner } from "@/components/ui/spinner"
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { formatCurrency } from "@/lib/utils/formatCurrency"
+import {
+  createPago as createPagoAction,
+  deletePago as deletePagoAction,
+  updatePagoEstado as updatePagoEstadoAction,
+} from "@/app/dashboard/pagos/actions"
+
+type Metodo = "Tarjeta" | "Efectivo" | "Transferencia"
+type Estado = "pendiente" | "completado" | "fallido" | "reembolsado"
+
+type ReservationOption = {
+  id: string
+  numero: string
+  client_name: string
+  total_price: number
+  vehicle: { brand: string; model: string }
+}
+
+type PagoListItem = {
+  id: string
+  reservation_id: string
+  monto: number
+  metodo_pago: Metodo
+  estado: Estado
+  numero: string | null
+  client_name: string | null
+  vehicle_label: string | null
+}
+
+const METODOS: Metodo[] = ["Tarjeta", "Efectivo", "Transferencia"]
+const ESTADOS: Estado[] = ["pendiente", "completado", "fallido", "reembolsado"]
+
+const ESTADO_BADGE: Record<Estado, string> = {
+  pendiente: "border border-amber-200 bg-amber-50 text-amber-700",
+  completado: "border border-emerald-200 bg-emerald-50 text-emerald-700",
+  fallido: "border border-red-200 bg-red-50 text-red-700",
+  reembolsado: "border border-slate-200 bg-slate-50 text-slate-700",
+}
+
+const METODO_ICON: Record<Metodo, React.ComponentProps<typeof HugeiconsIcon>["icon"]> = {
+  Tarjeta: CreditCardIcon,
+  Efectivo: Wallet01Icon,
+  Transferencia: BankIcon,
+}
 
 
 export function PaymentAction() {
   const router = useRouter()
-  const [isOpen, setIsOpen] = useState(false)
-  
-  const [vehiculos, setVehiculos] = useState<any[]>([])
-  const [referencia, setReferencia] = useState("")
-  const [monto, setMonto] = useState("")
-  const [metodo, setMetodo] = useState<PaymentMethod>("Tarjeta")
-  const [isProcessing, setIsProcessing] = useState(false)
+  const [isOpen, setIsOpen] = React.useState(false)
 
-  useEffect(() => {
-    async function fetchVehiculos() {
-      const supabase = createClient()
-      const { data } = await supabase
-        .from("vehicles")
-        .select("plate, brand, model, status")
-        .order("status", { ascending: false })
-      if (data) setVehiculos(data)
+  const [reservations, setReservations] = React.useState<ReservationOption[]>([])
+  // nuevo estado para saber si las reservas todavia estan cargando
+  const [isLoadingReservations, setIsLoadingReservations] = React.useState(false)
+  const [reservationId, setReservationId] = React.useState("")
+  const [monto, setMonto] = React.useState("")
+  const [metodo, setMetodo] = React.useState<Metodo>("Tarjeta")
+  const [referencia, setReferencia] = React.useState("")
+  const [notas, setNotas] = React.useState("")
+  const [isProcessing, setIsProcessing] = React.useState(false)
+  const [error, setError] = React.useState<string | null>(null)
+
+  React.useEffect(() => {
+    if (!isOpen) return
+    async function fetchReservations() {
+
+       //nuevo activar/desactivar el loading alrededor del fetch
+      setIsLoadingReservations(true)
+      try{
+
+      
+      const res = await fetch("/api/pagos/reservations")
+      if (res.ok) {
+        const data = (await res.json()) as { reservations: ReservationOption[] }
+        setReservations(data.reservations)
+      }
+    } finally {
+      setIsLoadingReservations(false)
     }
-    if (isOpen) fetchVehiculos()
+    }
+    fetchReservations()
   }, [isOpen])
 
-  const onClose = () => {
-    setIsOpen(false)
-    setReferencia("")
-    setMonto("")
+  function selectedReservation(): ReservationOption | undefined {
+    return reservations.find((r) => r.id === reservationId)
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  React.useEffect(() => {
+    const r = selectedReservation()
+    if (r) setMonto(String(r.total_price))
+  }, [reservationId, reservations])
+
+  function reset() {
+    setReservationId("")
+    setMonto("")
+    setMetodo("Tarjeta")
+    setReferencia("")
+    setNotas("")
+    setError(null)
+  }
+
+  function handleClose() {
+    setIsOpen(false)
+    reset()
+  }
+
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
-    setIsProcessing(true)
+    setError(null)
 
-    const supabase = createClient()
-    const { error } = await supabase.from("pagos").insert({
-      numero_reserva: referencia, 
-      monto: Number(monto),
-      metodo_pago: metodo,
-      estado: "Completado"
-    })
-
-    setIsProcessing(false)
-
-    if (error) {
-      alert("Error al procesar el pago: " + error.message)
+    if (!reservationId) {
+      setError("Selecciona una reserva.")
+      return
+    }
+    const montoNum = Number(monto)
+    if (!Number.isFinite(montoNum) || montoNum <= 0) {
+      setError("El monto debe ser mayor que 0.")
       return
     }
 
-    alert("¡Pago registrado con éxito!")
-    onClose()
+    setIsProcessing(true)
+    const result = await createPagoAction({
+      reservation_id: reservationId,
+      monto: montoNum,
+      metodo_pago: metodo,
+      estado: "completado",
+      referencia: referencia.trim() || null,
+      notas: notas.trim() || null,
+    })
+    setIsProcessing(false)
+
+    if (!result.ok) {
+      setError(result.error)
+      return
+    }
+
+    handleClose()
     router.refresh()
   }
 
+  //nuevo un solo flag para bloquear todo el formulario a la vez
+  const isFormBusy = isLoadingReservations || isProcessing
+
+
   return (
     <>
-      <Button onClick={() => setIsOpen(true)} className="rounded-full bg-slate-900 text-white hover:bg-slate-800">
-        <HugeiconsIcon icon={Add01Icon} strokeWidth={1.75} className="mr-2" />
+      <Button
+        type="button"
+        variant="default"
+        size="default"
+        className="rounded-full"
+        onClick={() => setIsOpen(true)}
+      >
+        <HugeiconsIcon
+          icon={Add01Icon}
+          strokeWidth={1.75}
+          data-icon="inline-start"
+        />
         Registrar Pago
       </Button>
 
-      {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-slate-950/45 backdrop-blur-sm" onClick={onClose} />
-          <div className="relative w-full max-w-md overflow-hidden rounded-3xl bg-white shadow-2xl">
-            <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4">
-              <h2 className="text-lg font-bold text-slate-900">Registrar Pago</h2>
-              <button onClick={onClose} className="text-slate-400 hover:text-slate-700">
-                <HugeiconsIcon icon={Cancel01Icon} strokeWidth={2} />
-              </button>
+      <Dialog
+        open={isOpen}
+        onOpenChange={(open) => {
+          if (!open) handleClose()
+          else setIsOpen(true)
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Registrar Pago</DialogTitle>
+            <DialogDescription>
+              Vincula el pago a una reserva existente. Al registrar un pago
+              completado, la reserva pasa automáticamente a Confirmada.
+            </DialogDescription>
+          </DialogHeader>
+
+          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="reservation">Reserva</Label>
+              {/* nuevo Select bloqueado mientras carga, y mensaje de "Cargando..." en vez de saltar directo a "vacio" */}
+              <Select
+                value={reservationId}
+                onValueChange={(v) => setReservationId(v ?? "")}
+                disabled={isFormBusy}
+              >
+                <SelectTrigger id="reservation">
+                  <SelectValue placeholder="Selecciona una reserva" />
+                </SelectTrigger>
+                <SelectContent>
+                  {reservations.length === 0 ? (
+                    <SelectItem value="__empty__" disabled>
+                      No hay reservas disponibles
+                    </SelectItem>
+                  ) : (
+                    reservations.map((r) => (
+                      <SelectItem key={r.id} value={r.id}>
+                        {r.numero} · {r.client_name} · {r.vehicle.brand}{" "}
+                        {r.vehicle.model} · {formatCurrency(r.total_price)}
+                      </SelectItem>
+                    ))
+                  )}
+                </SelectContent>
+              </Select>
             </div>
 
-            <form onSubmit={handleSubmit} className="p-6 space-y-4">
-              <div>
-                <label className="mb-1 block text-sm font-medium text-slate-700">Seleccionar Vehículo</label>
-                <select required value={referencia} onChange={(e) => setReferencia(e.target.value)} className="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 bg-white">
-                  <option value="" disabled>Elige el vehículo a pagar...</option>
-                  {vehiculos.map((v) => (
-                    <option key={v.plate} value={v.plate}>
-                      {v.brand} {v.model} ({v.plate}) - {v.status === 'in_use' ? ' Reservado' : ' Disponible'}
-                    </option>
-                  ))}
-                </select>
-              </div>
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="monto">Monto (DOP)</Label>
+              {/* nuevo campos bloqueados mientras el formulario esta ocupado */}
+              <Input
+                id="monto"
+                name="monto"
+                type="number"
+                inputMode="decimal"
+                min={1}
+                step="0.01"
+                value={monto}
+                onChange={(e) => setMonto(e.currentTarget.value)}
+                placeholder="0.00"
+                required
+                disabled={isFormBusy}
+              />
+            </div>
 
-              <div>
-                <label className="mb-1 block text-sm font-medium text-slate-700">Monto (DOP)</label>
-                <input type="number" required min="1" value={monto} onChange={(e) => setMonto(e.target.value)} placeholder="0.00" className="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-primary focus:ring-2 focus:ring-primary/20" />
+            <div className="flex flex-col gap-1.5">
+              <Label>Método de Pago</Label>
+              <div className="grid grid-cols-3 gap-2">
+                {METODOS.map((m) => (
+                  <button
+                    key={m}
+                    type="button"
+                    onClick={() => setMetodo(m)}
+                    className={`flex flex-col items-center gap-2 rounded-xl border p-3 text-xs font-semibold transition-all ${
+                      metodo === m
+                        ? "border-primary bg-primary/10 text-primary"
+                        : "border-slate-200 text-slate-600 hover:bg-slate-50"
+                    }`}
+                  >
+                    <HugeiconsIcon icon={METODO_ICON[m]} strokeWidth={1.5} />
+                    {m}
+                  </button>
+                ))}
               </div>
+            </div>
 
-              <div>
-                <label className="mb-2 block text-sm font-medium text-slate-700">Método de Pago</label>
-                <div className="grid grid-cols-3 gap-2">
-                  {(["Tarjeta", "Efectivo", "Transferencia"] as PaymentMethod[]).map((m) => (
-                    <button key={m} type="button" onClick={() => setMetodo(m)} className={`flex flex-col items-center gap-2 rounded-xl border p-3 text-xs font-semibold transition-all ${metodo === m ? "border-primary bg-primary/10 text-primary" : "border-slate-200 text-slate-600 hover:bg-slate-50"}`}>
-                      {m === "Tarjeta" && <HugeiconsIcon icon={CreditCardIcon} />}
-                      {m === "Efectivo" && <HugeiconsIcon icon={Wallet01Icon} />}
-                      {m === "Transferencia" && <HugeiconsIcon icon={BankIcon} />}
-                      {m}
-                    </button>
-                  ))}
-                </div>
-              </div>
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="referencia">Referencia (opcional)</Label>
+              <Input
+                id="referencia"
+                name="referencia"
+                type="text"
+                value={referencia}
+                onChange={(e) => setReferencia(e.currentTarget.value)}
+                placeholder="Núm. de transacción, cheque, etc."
+              />
+            </div>
 
-              <div className="mt-6 flex gap-3">
-                <button type="button" onClick={onClose} className="flex-1 rounded-full border border-slate-200 py-3 font-semibold text-slate-700 hover:bg-slate-50">Cancelar</button>
-                <button type="submit" disabled={isProcessing || vehiculos.length === 0} className="flex-1 rounded-full bg-slate-900 py-3 font-semibold text-white hover:bg-slate-800 disabled:opacity-50">
-                  {isProcessing ? "Procesando..." : "Confirmar"}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="notas">Notas (opcional)</Label>
+              <Input
+                id="notas"
+                name="notas"
+                type="text"
+                value={notas}
+                onChange={(e) => setNotas(e.currentTarget.value)}
+                placeholder="Observaciones"
+              />
+            </div>
+
+            {error && (
+              <p className="text-xs text-destructive" role="alert">
+                {error}
+              </p>
+            )}
+
+            <DialogFooter>
+              {/* nuevo "Cancelar" bloqueado solo mientras se envía (no mientras carga reservas), y boton de enviar con isFormBusy */}
+              <DialogClose
+                render={
+                  <Button type="button" variant="outline" className="rounded-full" disabled={isProcessing} />
+                }
+              >
+                Cancelar
+              </DialogClose>
+              <Button
+                type="submit"
+                variant="default"
+                disabled={isProcessing || reservations.length === 0}
+                className="rounded-full"
+              >
+                {isProcessing ? <Spinner /> : null}
+                {isProcessing ? "Procesando…" : "Confirmar Pago"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </>
   )
 }
 
 
-export function PaymentRowActions({ pago }: { pago: any }) {
+export function PaymentRowActions({ pago }: { pago: PagoListItem }) {
   const router = useRouter()
-  const [isEditOpen, setIsEditOpen] = useState(false)
-  
-  const [vehiculos, setVehiculos] = useState<any[]>([])
-  const [referencia, setReferencia] = useState(pago.numero_reserva)
-  const [monto, setMonto] = useState(pago.monto.toString())
-  const [metodo, setMetodo] = useState<PaymentMethod>(pago.metodo_pago)
-  const [isProcessing, setIsProcessing] = useState(false)
+  const [isEditOpen, setIsEditOpen] = React.useState(false)
+  const [estado, setEstado] = React.useState<Estado>(pago.estado)
+  const [isProcessing, setIsProcessing] = React.useState(false)
+  //nuevo estado para saber si se esta eliminando
+  const [isDeleting, setIsDeleting] = React.useState(false)
+  const [error, setError] = React.useState<string | null>(null)
 
-  useEffect(() => {
-    async function fetchVehiculos() {
-      const supabase = createClient()
-      const { data } = await supabase.from("vehicles").select("plate, brand, model, status")
-      if (data) setVehiculos(data)
-    }
-    if (isEditOpen) fetchVehiculos()
-  }, [isEditOpen])
+  function handleClose() {
+    setIsEditOpen(false)
+    setEstado(pago.estado)
+    setError(null)
+  }
 
-  const handleDelete = async () => {
-    const confirmar = window.confirm(`¿Estás seguro de que deseas eliminar el pago de la reserva ${pago.numero_reserva}?`)
-    if (!confirmar) return
+  async function handleDelete() {
+    const confirmed = window.confirm(
+      `¿Eliminar el pago de ${pago.numero ?? "esta reserva"}?`,
+    )
+    if (!confirmed) return
 
-    const supabase = createClient()
-    const { error } = await supabase.from("pagos").delete().eq("id", pago.id)
-
-    if (error) {
-      alert("Error al eliminar: " + error.message)
+     //nuevo activar/desactivar el loading alrededor del delete
+    setIsDeleting(true)
+    const result = await deletePagoAction(pago.id)
+    if (!result.ok) {
+      alert(result.error)
       return
     }
     router.refresh()
   }
 
-  const handleUpdate = async (e: React.FormEvent) => {
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
+    setError(null)
     setIsProcessing(true)
-
-    const supabase = createClient()
-    const { error } = await supabase.from("pagos").update({
-      numero_reserva: referencia,
-      monto: Number(monto),
-      metodo_pago: metodo,
-    }).eq("id", pago.id)
-
+    const result = await updatePagoEstadoAction(pago.id, estado)
     setIsProcessing(false)
-
-    if (error) {
-      alert("Error al actualizar: " + error.message)
+    if (!result.ok) {
+      setError(result.error)
       return
     }
-
-    alert("¡Pago actualizado correctamente!")
     setIsEditOpen(false)
     router.refresh()
   }
 
   return (
     <>
-      <div className="flex items-center gap-2">
-        <button onClick={() => setIsEditOpen(true)} className="inline-flex size-8 items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-amber-50 hover:text-amber-600" title="Editar pago">
-          <HugeiconsIcon icon={Edit01Icon} strokeWidth={1.5} className="size-4" />
-        </button>
-        <button onClick={handleDelete} className="inline-flex size-8 items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-red-50 hover:text-red-600" title="Eliminar pago">
-          <HugeiconsIcon icon={Delete01Icon} strokeWidth={1.5} className="size-4" />
-        </button>
+      <div className="flex items-center justify-end gap-2">
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon-sm"
+          aria-label="Editar estado del pago"
+          onClick={() => setIsEditOpen(true)}
+        >
+          <HugeiconsIcon
+            icon={Edit01Icon}
+            strokeWidth={1.5}
+            className="size-4"
+          />
+        </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon-sm"
+          aria-label="Eliminar pago"
+          onClick={handleDelete}
+        >
+          <HugeiconsIcon
+            icon={Delete01Icon}
+            strokeWidth={1.5}
+            className="size-4"
+          />
+        </Button>
       </div>
 
-      {isEditOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-slate-950/45 backdrop-blur-sm" onClick={() => setIsEditOpen(false)} />
-          <div className="relative w-full max-w-md overflow-hidden rounded-3xl bg-white shadow-2xl">
-            <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4">
-              <h2 className="text-lg font-bold text-slate-900">Editar Pago</h2>
-              <button onClick={() => setIsEditOpen(false)} className="text-slate-400 hover:text-slate-700">
-                <HugeiconsIcon icon={Cancel01Icon} strokeWidth={2} />
-              </button>
+      <Dialog
+        open={isEditOpen}
+        onOpenChange={(open) => {
+          if (!open) handleClose()
+          else setIsEditOpen(true)
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Editar estado del pago</DialogTitle>
+            <DialogDescription>
+              {pago.numero ?? "Reserva"} ·{" "}
+              {pago.vehicle_label ?? "Vehículo"} ·{" "}
+              {formatCurrency(pago.monto)} · {pago.metodo_pago}
+            </DialogDescription>
+          </DialogHeader>
+
+          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+            <div className="flex flex-col gap-1.5">
+              <Label>Estado</Label>
+              <Select
+                value={estado}
+                onValueChange={(v) => setEstado(v as Estado)}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {ESTADOS.map((e) => (
+                    <SelectItem key={e} value={e}>
+                      <span
+                        className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${ESTADO_BADGE[e]}`}
+                      >
+                        {e}
+                      </span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                Cambiar a <strong>completado</strong> promoverá la reserva a
+                Confirmada si está pendiente.
+              </p>
             </div>
 
-            <form onSubmit={handleUpdate} className="p-6 space-y-4 text-left">
-              <div>
-                <label className="mb-1 block text-sm font-medium text-slate-700">Vehículo / Reserva</label>
-                <select required value={referencia} onChange={(e) => setReferencia(e.target.value)} className="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 bg-white">
-                  <option value={pago.numero_reserva}>{pago.numero_reserva} (Actual)</option>
-                  {vehiculos.map((v) => (
-                    <option key={v.plate} value={v.plate}>{v.brand} {v.model} ({v.plate})</option>
-                  ))}
-                </select>
-              </div>
+            {error && (
+              <p className="text-xs text-destructive" role="alert">
+                {error}
+              </p>
+            )}
 
-              <div>
-                <label className="mb-1 block text-sm font-medium text-slate-700">Monto (DOP)</label>
-                <input type="number" required min="1" value={monto} onChange={(e) => setMonto(e.target.value)} className="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20" />
-              </div>
-
-              <div>
-                <label className="mb-2 block text-sm font-medium text-slate-700">Método de Pago</label>
-                <div className="grid grid-cols-3 gap-2">
-                  {(["Tarjeta", "Efectivo", "Transferencia"] as PaymentMethod[]).map((m) => (
-                    <button key={m} type="button" onClick={() => setMetodo(m)} className={`flex flex-col items-center gap-2 rounded-xl border p-3 text-xs font-semibold transition-all ${metodo === m ? "border-amber-500 bg-amber-50 text-amber-700" : "border-slate-200 text-slate-600 hover:bg-slate-50"}`}>
-                      {m === "Tarjeta" && <HugeiconsIcon icon={CreditCardIcon} />}
-                      {m === "Efectivo" && <HugeiconsIcon icon={Wallet01Icon} />}
-                      {m === "Transferencia" && <HugeiconsIcon icon={BankIcon} />}
-                      {m}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="mt-6 flex gap-3">
-                <button type="button" onClick={() => setIsEditOpen(false)} className="flex-1 rounded-full border border-slate-200 py-3 font-semibold text-slate-700 hover:bg-slate-50">Cancelar</button>
-                <button type="submit" disabled={isProcessing} className="flex-1 rounded-full bg-slate-900 py-3 font-semibold text-white hover:bg-slate-800 disabled:opacity-50">
-                  {isProcessing ? "Guardando..." : "Guardar Cambios"}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+            <DialogFooter>
+              <DialogClose
+                render={
+                  <Button type="button" variant="outline" className="rounded-full" />
+                }
+              >
+                Cancelar
+              </DialogClose>
+              <Button
+                type="submit"
+                variant="default"
+                disabled={isProcessing}
+                className="rounded-full"
+              >
+                {isProcessing ? <Spinner /> : null}
+                {isProcessing ? "Guardando…" : "Guardar"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </>
   )
 }
+
+
+
+export type { PagoListItem }
+

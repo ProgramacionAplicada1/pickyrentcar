@@ -23,7 +23,9 @@ import { StatusBadge } from "@/components/vehicles/status-badge"
 import { ReservationStatusActions } from "../components/reservation-status-actions"
 import { ReservationStatusBadge } from "../components/reservation-status-badge"
 import { formatCurrency } from "@/lib/utils/formatCurrency"
-import { getReservationById } from "@/services/reservations"
+import { getReservationById, getReservationsWithPaymentStatus} from "@/services/reservations";
+
+
 
 export const metadata = {
   title: "Detalle de reserva · PickyRentCar",
@@ -37,6 +39,9 @@ export default async function ReservationDetailPage({ params }: Props) {
   const { id } = await params
   const reservation = await getReservationById(id)
   if (!reservation) notFound()
+  
+  const paidReservationIds = await getReservationsWithPaymentStatus();
+  const hasCompletedPayment = paidReservationIds.has(reservation.id);
 
   const cover = reservation.vehicle?.image_urls[0] ?? null
 
@@ -195,6 +200,7 @@ export default async function ReservationDetailPage({ params }: Props) {
               <ReservationStatusActions
                 reservationId={reservation.id}
                 status={reservation.status}
+                hasCompletedPayment={hasCompletedPayment}
               />
             </section>
 
@@ -216,7 +222,7 @@ export default async function ReservationDetailPage({ params }: Props) {
         </Card>
       </div>
     </div>
-  )
+  );
 }
 
 function SectionTitle({

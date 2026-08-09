@@ -13,7 +13,7 @@ type Props = {
   redirectTo?: string
 }
 
-export function PublicLogoutButton({ className, redirectTo = "/landing-page" }: Props) {
+export function PublicLogoutButton({ className, redirectTo = "/" }: Props) {
   const router = useRouter()
   const [isPending, setIsPending] = React.useState(false)
 

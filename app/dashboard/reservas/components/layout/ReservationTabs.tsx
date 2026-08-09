@@ -1,7 +1,5 @@
 "use client";
 
-import { useState } from "react";
-
 const tabs = [
   "Todas",
   "Activas",
@@ -11,9 +9,12 @@ const tabs = [
   "Hoy",
 ];
 
-export default function ReservationTabs() {
-  const [activeTab, setActiveTab] = useState("Todas");
+type Props = {
+  activeTab: string;
+  setActiveTab: (value: string) => void;
+};
 
+export default function ReservationTabs({ activeTab, setActiveTab }: Props) {
   return (
     <section className="rounded-3xl border border-slate-200 bg-white p-2 shadow-sm">
       <div className="flex flex-wrap gap-2">

@@ -1,11 +1,11 @@
-import type { ReservationStatus } from "../../data/mockReservations";
+import type { AdaptedReservationStatus } from "../../data/mockReservations";
 
 interface StatusBadgeProps {
-  status: ReservationStatus;
+  status: AdaptedReservationStatus;
 }
 
 const statusConfig: Record<
-  ReservationStatus,
+  AdaptedReservationStatus,
   {
     text: string;
     dot: string;
@@ -16,6 +16,11 @@ const statusConfig: Record<
     text: "Activa",
     dot: "bg-emerald-500",
     badge: "border border-emerald-200 bg-emerald-50 text-emerald-700",
+  },
+  "Pendiente de pago": {
+    text: "Pendiente de pago",
+    dot: "bg-orange-500",
+    badge: "border border-orange-200 bg-orange-50 text-orange-700",
   },
   Pendiente: {
     text: "Pendiente",

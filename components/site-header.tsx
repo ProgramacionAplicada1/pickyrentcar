@@ -4,9 +4,10 @@ import { usePathname } from "next/navigation"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { SidebarLeftIcon } from "@hugeicons/core-free-icons"
 
+import { FaBars } from "react-icons/fa"
+
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
-import { QuickCreateButton } from "@/components/quick-create-button"
 import { useSidebarToggle } from "@/components/sidebar-toggle-context"
 
 const TITLES: Record<string, string> = {
@@ -21,13 +22,23 @@ const TITLES: Record<string, string> = {
 }
 
 export function SiteHeader() {
-  const { toggle } = useSidebarToggle()
+  const { toggle, toggleMobile } = useSidebarToggle()
   const pathname = usePathname()
   const title = TITLES[pathname] ?? "Dashboard"
 
   return (
     <header className="flex h-14 shrink-0 items-center justify-between gap-4 border-b bg-background px-4">
       <div className="flex items-center gap-2">
+                <Button
+          type="button"
+          variant="ghost"
+          size="icon-sm"
+          aria-label="Abrir menú"
+          onClick={toggleMobile}
+          className="md:hidden"
+        >
+          <FaBars />
+        </Button>
         <Button
           type="button"
           variant="ghost"
@@ -40,9 +51,6 @@ export function SiteHeader() {
         </Button>
         <Separator orientation="vertical" className="h-4 hidden md:block" />
         <h1 className="text-base font-semibold tracking-tight">{title}</h1>
-      </div>
-      <div className="flex items-center gap-2">
-        <QuickCreateButton />
       </div>
     </header>
   )

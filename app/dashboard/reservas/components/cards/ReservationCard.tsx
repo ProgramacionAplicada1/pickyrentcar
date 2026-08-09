@@ -8,16 +8,19 @@ import ReservationClient from "./ReservationClient";
 import ReservationBooking from "./ReservationBooking";
 import ReservationPayment from "./ReservationPayment";
 import ReservationActions from "./ReservationActions";
+import { ReservationStatusActions } from "../reservation-status-actions";
+
 
 interface ReservationCardProps {
   reservation: Reservation;
   onView?: (reservation: Reservation) => void;
-  onEdit?: (reservation: Reservation) => void;
+  hasCompletedPayment?: boolean;
 }
 
 const borderColors = {
   Activa: "border-l-emerald-500",
   Pendiente: "border-l-amber-500",
+  "Pendiente de pago": "border-l-orange-500",
   Finalizada: "border-l-blue-500",
   Cancelada: "border-l-red-500",
 };
@@ -25,7 +28,7 @@ const borderColors = {
 export default function ReservationCard({
   reservation,
   onView,
-  onEdit,
+  hasCompletedPayment = false,
 }: ReservationCardProps) {
   return (
     <article
@@ -132,12 +135,9 @@ export default function ReservationCard({
         </div>
 
         <ReservationActions
-          onView={() => onView?.(reservation)}
-          onEdit={() => onEdit?.(reservation)}
-          onPrint={() => window.print()}
-          onMore={() =>
-            alert(`Más opciones para ${reservation.numeroReserva}`)
-          }
+          reservation={reservation}
+          onView={onView}
+          hasCompletedPayment={hasCompletedPayment}
         />
 
       </div>

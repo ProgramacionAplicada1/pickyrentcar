@@ -1,4 +1,5 @@
 "use client";
+
 import {
   FaSearch,
   FaFilter,
@@ -9,7 +10,12 @@ import {
   FaList,
 } from "react-icons/fa";
 
-export default function ReservationToolbar() {
+type Props = {
+  query: string;
+  setQuery: (value: string) => void;
+};
+
+export default function ReservationToolbar({ query, setQuery }: Props) {
   return (
     <section className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm">
       <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
@@ -25,15 +31,19 @@ export default function ReservationToolbar() {
               id="search-reservations"
               type="text"
               placeholder="Buscar por cliente, vehículo, placa o reserva..."
+              value={query}
+              onChange={(e) => setQuery(e.currentTarget.value)}
               className="w-full rounded-2xl border border-slate-200 bg-slate-50 py-3 pl-11 pr-4 text-sm text-slate-900 outline-none transition-all duration-300 placeholder:text-slate-400 focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-500/10"
             />
           </div>
         </div>
 
-        {/* Filters */}
+        {/* Filters (decorativos por ahora) */}
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
           <button
             type="button"
+            aria-disabled="true"
+            title="Próximamente"
             className="inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-700 shadow-sm transition-all duration-300 hover:border-slate-300 hover:bg-slate-50"
           >
             <FaFilter className="text-slate-500" />
@@ -42,6 +52,8 @@ export default function ReservationToolbar() {
 
           <button
             type="button"
+            aria-disabled="true"
+            title="Próximamente"
             className="inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-700 shadow-sm transition-all duration-300 hover:border-slate-300 hover:bg-slate-50"
           >
             <FaCar className="text-slate-500" />
@@ -50,6 +62,8 @@ export default function ReservationToolbar() {
 
           <button
             type="button"
+            aria-disabled="true"
+            title="Próximamente"
             className="inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-700 shadow-sm transition-all duration-300 hover:border-slate-300 hover:bg-slate-50"
           >
             <FaCalendarAlt className="text-slate-500" />
@@ -58,6 +72,8 @@ export default function ReservationToolbar() {
 
           <button
             type="button"
+            aria-disabled="true"
+            title="Próximamente"
             className="inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-700 shadow-sm transition-all duration-300 hover:border-slate-300 hover:bg-slate-50"
           >
             <FaSortAmountDown className="text-slate-500" />
@@ -65,20 +81,22 @@ export default function ReservationToolbar() {
           </button>
         </div>
 
-        {/* View toggles */}
+        {/* View toggles (decorativos) */}
         <div className="flex items-center gap-2 self-start xl:self-auto">
           <button
             type="button"
+            aria-disabled="true"
+            title="Próximamente"
             className="inline-flex h-12 w-12 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-600 shadow-sm transition-all duration-300 hover:border-slate-300 hover:bg-slate-50"
-            title="Vista en cuadrícula"
           >
             <FaThLarge />
           </button>
 
           <button
             type="button"
-            className="inline-flex h-12 w-12 items-center justify-center rounded-2xl border border-slate-200 bg-slate-900 text-white shadow-sm transition-all duration-300 hover:bg-slate-800"
-            title="Vista en lista"
+            aria-disabled="true"
+            title="Próximamente"
+            className="inline-flex h-12 w-12 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-600 shadow-sm transition-all duration-300 hover:border-slate-300 hover:bg-slate-50"
           >
             <FaList />
           </button>

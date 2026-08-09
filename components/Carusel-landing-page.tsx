@@ -28,7 +28,7 @@ function CarruselFotos() {
   ]
 
   return (
-    <div className="relative w-full h-screen">
+    <div className="relative w-full h-[60vh] md:h-screen">
         <Button
           onClick={atras} className="absolute top-1/2 left-4 z-30 -translate-y-1/2 rounded-full bg-black/50 p-2 text-white hover:bg-black/70"
         >
@@ -41,10 +41,10 @@ function CarruselFotos() {
           &gt;
       </Button>
       
-      <div className="overflow-hidden w-full h-screen" ref={emblaRef}>
+      <div className="overflow-hidden w-full h-[60vh] md:h-screen" ref={emblaRef}>
         <div className="flex items-center">
           {carros.map((carro) => (
-            <div key={carro.id} className="flex-[0_0_100%] relative h-screen">
+            <div key={carro.id} className="flex-[0_0_100%] relative h-[60vh] md:h-screen">
               <Image
                 src={carro.imagen}
                 alt="carros"

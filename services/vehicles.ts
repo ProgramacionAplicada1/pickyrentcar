@@ -165,11 +165,17 @@ function normalizeImageUrls(row: {
 
 export async function listVehicles(): Promise<VehicleRow[]> {
   const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) return []
+
   const { data } = await supabase
     .from("vehicles")
     .select(
       "id, nombre, plate, brand, model, year, color, seats, status, transmission, fuel_type, category, daily_price, notes, image_urls, created_at",
     )
+    .eq("created_by", user.id)
     .order("created_at", { ascending: false })
 
   return (data ?? []).map((row) => ({
@@ -182,12 +188,18 @@ export async function getVehicleById(
   id: string,
 ): Promise<VehicleFull | null> {
   const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) return null
+
   const { data } = await supabase
     .from("vehicles")
     .select(
       "id, nombre, plate, brand, model, year, color, seats, status, transmission, fuel_type, category, daily_price, notes, image_urls, created_at, updated_at",
     )
     .eq("id", id)
+    .eq("created_by", user.id)
     .maybeSingle()
 
   if (!data) return null
@@ -199,21 +211,32 @@ export async function getVehicleById(
 
 export async function getVehicleStats(): Promise<VehicleStats> {
   const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) {
+    return { total: 0, available: 0, inUse: 0, maintenance: 0 }
+  }
+
   const [total, available, inUse, maintenance] = await Promise.all([
     supabase
       .from("vehicles")
-      .select("*", { count: "exact", head: true }),
+      .select("*", { count: "exact", head: true })
+      .eq("created_by", user.id),
     supabase
       .from("vehicles")
       .select("*", { count: "exact", head: true })
+      .eq("created_by", user.id)
       .eq("status", "available"),
     supabase
       .from("vehicles")
       .select("*", { count: "exact", head: true })
+      .eq("created_by", user.id)
       .eq("status", "in_use"),
     supabase
       .from("vehicles")
       .select("*", { count: "exact", head: true })
+      .eq("created_by", user.id)
       .eq("status", "maintenance"),
   ])
 
@@ -228,6 +251,29 @@ export async function getVehicleStats(): Promise<VehicleStats> {
 // ============================================================================
 // Mutations
 // ============================================================================
+
+export async function getMostRentedVehicles() {
+  const vehicles = await listVehicles();
+  const supabase = await createClient();
+
+  const result = [];
+
+  for (const vehicle of vehicles) {
+    const { count } = await supabase
+      .from("reservations")
+      .select("*", { count: "exact", head: true })
+      .eq("vehicle_id", vehicle.id);
+
+    result.push({
+      nombre: vehicle.nombre ?? `${vehicle.brand} ${vehicle.model}`,
+      reservas: count ?? 0,
+    });
+  }
+
+  return result.sort((a, b) => b.reservas - a.reservas).slice(0, 5);
+}
+
+
 
 export async function createVehicle(
   _prev: VehicleActionResult | undefined,

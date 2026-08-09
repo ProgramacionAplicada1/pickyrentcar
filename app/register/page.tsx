@@ -28,7 +28,7 @@ export default async function RegisterPage() {
   return (
     <div className="flex min-h-full flex-1 flex-col items-center justify-center bg-zinc-50 px-4 py-4 sm:py-6">
       <Link
-        href="/landing-page"
+        href="/"
         className="absolute top-4 left-4 z-10 inline-flex items-center gap-1.5 rounded-full bg-card/80 px-3 py-1.5 text-sm font-medium text-muted-foreground shadow-sm backdrop-blur transition-colors hover:bg-card hover:text-foreground"
       >
         <HugeiconsIcon
