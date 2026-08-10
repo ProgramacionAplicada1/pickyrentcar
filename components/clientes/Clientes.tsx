@@ -10,7 +10,7 @@ type Props = { clientes: CLIENTE[] };
 
 export function ClientsPageClient({ clientes: clients }: Props) {
 
-  const [buscar, setBuscar] = useState("") // para lo que el usuario busca
+  const [buscar, setBuscar] = useState("") // para lo que el usuario busca en el filtrado
   const [tipo, setTipo] = useState("todos")  //para tipo osea si es registrado o invitado
   const [estado, setEstado] = useState("todos") //para el estado en el que esta el cliente
   const FiltradoClientes = clients.filter((cliente) => {
