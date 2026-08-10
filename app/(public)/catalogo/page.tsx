@@ -209,6 +209,7 @@ export default async function CatalogoPage({ searchParams }: Props) {
                   className="pointer-events-none absolute top-1/2 left-3.5 size-4 -translate-y-1/2 text-muted-foreground"
                 />
                 <Input
+                  key={`q-${q ?? ""}`}
                   id="q"
                   name="q"
                   type="search"
@@ -221,12 +222,24 @@ export default async function CatalogoPage({ searchParams }: Props) {
 
             <Field className="sm:w-44">
               <FieldLabel htmlFor="from">Desde</FieldLabel>
-              <Input id="from" name="from" type="date" defaultValue={from ?? ""} />
+              <Input
+                key={`from-${from ?? ""}`}
+                id="from"
+                name="from"
+                type="date"
+                defaultValue={from ?? ""}
+              />
             </Field>
 
             <Field className="sm:w-44">
               <FieldLabel htmlFor="to">Hasta</FieldLabel>
-              <Input id="to" name="to" type="date" defaultValue={to ?? ""} />
+              <Input
+                key={`to-${to ?? ""}`}
+                id="to"
+                name="to"
+                type="date"
+                defaultValue={to ?? ""}
+              />
             </Field>
 
             <div className="flex items-end">
