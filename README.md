@@ -42,20 +42,18 @@ El proyecto busca aplicar los conocimientos adquiridos en la asignatura mediante
 - Inicio de sesion.
 - Despliegue automatico mediante Vercel.
 - Pantalla con siderBar.
+- Catálogo público con búsqueda, categorías, ordenamiento y filtro real por disponibilidad.
+- Detalle de vehículos con imágenes, especificaciones, tarifa y calendario.
+- Sistema de reservas y sección **Mis reservas** para clientes.
+- Perfil de cliente editable y cambio de contraseña.
+- Sistema de favoritos por usuario.
+- Panel de administración, vehículos, clientes, pagos y reportes.
 
 ### En desarrollo
 
-- Catalogo de vehiculos disponibles.
-- Busqueda y filtrado de vehiculos por categoría, marca, precio y disponibilidad.
-- Visualizacion del detalle de cada vehiculo (imagenes, especificaciones y precio por día).
-- Sistema de reservas de vehiculos.
-- Gestion de disponibilidad de vehiculos.
-- Historial de reservas de los usuarios.
-- Panel de administracion.
-- Gestion de vehículos (crear, editar, eliminar y listar).
-- Gestion de usuarios y clientes.
-- Reportes basicos de alquileres y reservas.
-- Edicion del perfil de usuario.
+- Flujo de reserva por pasos con recogida, devolución y extras.
+- Correos de confirmación y notificaciones.
+- Mejoras adicionales de reportes y experiencia móvil.
 
 
 

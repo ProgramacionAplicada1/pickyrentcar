@@ -23,6 +23,7 @@ import {
 import { Separator } from "@/components/ui/separator"
 import { ImageGalleryDialog } from "@/components/vehicles/image-gallery-dialog"
 import { ReservationForm } from "@/components/public/reservation-form"
+import { FavoriteButton } from "@/components/public/favorite-button"
 import { VehicleAvailabilityPicker } from "@/components/public/vehicle-availability-picker"
 import { formatCurrency } from "@/lib/utils/formatCurrency"
 import { getCurrentUser } from "@/services/auth"
@@ -30,6 +31,7 @@ import {
   getPublicVehicleById,
   getVehicleReservedRanges,
 } from "@/services/catalog"
+import { getFavoriteVehicleIds } from "@/services/favorites"
 
 export const metadata = {
   title: "Detalle del vehículo · PickyRentCar",
@@ -50,13 +52,18 @@ export default async function CatalogoVehiclePage({
   const vehicle = await getPublicVehicleById(vehicleId)
   if (!vehicle) notFound()
 
-  const [disabledRanges, currentUser] = await Promise.all([
+  const [disabledRanges, currentUser, favoriteIds] = await Promise.all([
     getVehicleReservedRanges(vehicleId),
     getCurrentUser(),
+    getFavoriteVehicleIds(),
   ])
 
   const isUnavailable = vehicle.status === "maintenance"
   const cover = vehicle.image_urls[0] ?? null
+  const backParams = new URLSearchParams()
+  if (from) backParams.set("from", from)
+  if (to) backParams.set("to", to)
+  const backHref = `/catalogo${backParams.size ? `?${backParams.toString()}` : ""}`
 
   return (
     <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 py-8 sm:px-6 sm:py-10">
@@ -65,7 +72,7 @@ export default async function CatalogoVehiclePage({
         size="sm"
         className="w-fit rounded-full"
         nativeButton={false}
-        render={<Link href="/catalogo" />}
+        render={<Link href={backHref} />}
       >
         <HugeiconsIcon icon={ArrowLeft01Icon} strokeWidth={1.75} />
         Volver al catálogo
@@ -75,6 +82,17 @@ export default async function CatalogoVehiclePage({
         <div className="flex flex-col gap-6">
           <Card className="gap-0 overflow-hidden rounded-2xl p-0">
             <div className="relative aspect-[16/9] w-full overflow-hidden bg-muted">
+              {currentUser?.role !== "admin" && (
+                <div className="absolute top-4 right-4 z-10">
+                  <FavoriteButton
+                    vehicleId={vehicle.id}
+                    userId={currentUser?.role === "cliente" ? currentUser.id : null}
+                    initialFavorite={favoriteIds.includes(vehicle.id)}
+                    label
+                  />
+                </div>
+              )}
+
               {cover ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img

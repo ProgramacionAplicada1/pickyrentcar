@@ -3,7 +3,7 @@ import Image from "next/image"
 
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
-import { PublicLogoutButton } from "@/components/public-logout-button"
+import { PublicUserMenu } from "@/components/public-user-menu"
 import { getCurrentUser } from "@/services/auth"
 
 export const metadata = {
@@ -37,14 +37,14 @@ export default async function PublicLayout({
               className="size-8"
               priority
             />
-            <span className="text-base font-semibold tracking-tight">
+            <span className="hidden text-base font-semibold tracking-tight sm:inline">
               PickyRentCar
             </span>
           </Link>
           <div className="flex items-center gap-3">
             <Link
               href="/catalogo"
-              className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+              className="hidden text-sm font-medium text-muted-foreground transition-colors hover:text-foreground sm:inline"
             >
               Vehículos
             </Link>
@@ -69,7 +69,18 @@ export default async function PublicLayout({
                 Ir al panel
               </Button>
             ) : (
-              <PublicLogoutButton />
+              <>
+                <Link
+                  href="/mis-reservas"
+                  className="hidden text-sm font-medium text-muted-foreground transition-colors hover:text-foreground sm:inline"
+                >
+                  Mis reservas
+                </Link>
+                <PublicUserMenu
+                  displayName={user.displayName}
+                  email={user.email}
+                />
+              </>
             )}
           </div>
         </div>
