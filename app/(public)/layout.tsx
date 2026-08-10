@@ -41,13 +41,24 @@ export default async function PublicLayout({
               PickyRentCar
             </span>
           </Link>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-4">
             <Link
               href="/catalogo"
               className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
             >
               Vehículos
             </Link>
+            
+           
+            {isAuthenticated && !isAdmin && (
+              <Link
+                href="/mis-reservas"
+                className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+              >
+                Mis Reservas
+              </Link>
+            )}
+
             {!isAuthenticated ? (
               <Button
                 variant="outline"
