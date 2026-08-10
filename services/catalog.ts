@@ -13,6 +13,7 @@ export type PublicVehicleListItem = {
   brand: string;
   model: string;
   year: number;
+  seats: number | null;
   status: string;
   transmission: string;
   fuel_type: string;
@@ -23,7 +24,6 @@ export type PublicVehicleListItem = {
 
 export type PublicVehicleDetail = PublicVehicleListItem & {
   color: string | null;
-  seats: number | null;
 };
 
 export type ReservedRange = {
@@ -67,15 +67,48 @@ function normalizeImageUrls(value: unknown): string[] {
 
 export async function listPublicVehicles(): Promise<PublicVehicleListItem[]> {
   const supabase = await createClient();
-  const { data, error } = await supabase.rpc("get_public_vehicles");
-  if (error) return [];
 
-  return (data ?? []).map((row: Omit<PublicVehicleListItem, "image_urls">) => ({
+  // La migración 013 agrega seats al catálogo. Si todavía no fue aplicada,
+  // mantenemos compatibilidad con el RPC anterior para no romper la página.
+  const v2 = await supabase.rpc("get_public_vehicles_v2");
+  const result = v2.error
+    ? await supabase.rpc("get_public_vehicles")
+    : v2;
+
+  if (result.error) return [];
+
+  return (result.data ?? []).map((row: Omit<PublicVehicleListItem, "image_urls">) => ({
     ...row,
+    seats: Number((row as { seats?: number | null }).seats ?? 0) || null,
     image_urls: normalizeImageUrls(
       (row as { image_urls?: unknown }).image_urls,
     ),
   }));
+}
+
+export async function filterPublicVehiclesByAvailability(
+  vehicles: PublicVehicleListItem[],
+  from: string,
+  to: string,
+): Promise<PublicVehicleListItem[]> {
+  if (!from || !to || to < from) return vehicles;
+
+  const supabase = await createClient();
+  const checks = await Promise.all(
+    vehicles.map(async (vehicle) => {
+      const { data, error } = await supabase.rpc("check_vehicle_availability", {
+        p_vehicle_id: vehicle.id,
+        p_start_date: from,
+        p_end_date: to,
+      });
+
+      // Si una comprobación puntual falla, no ocultamos el vehículo; su ficha
+      // volverá a validar disponibilidad antes de permitir la reserva.
+      return error ? true : data !== false;
+    }),
+  );
+
+  return vehicles.filter((_, index) => checks[index]);
 }
 
 export async function getPublicVehicleById(
