@@ -23,10 +23,13 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
     .maybeSingle()
 
   const meta = (user.user_metadata as Record<string, string | undefined>) ?? {}
-  const role: AuthRole =
-    (profile as { role?: string } | null)?.role === "cliente"
-      ? "cliente"
-      : "admin"
+const profileRole = (profile as { role?: string } | null)?.role;
+if (profileRole !== "admin" && profileRole !== "cliente") {
+  return null;
+}
+const role: AuthRole = profileRole;
+  
+  
   const displayName =
     (profile as { full_name?: string } | null)?.full_name ??
     meta.full_name ??

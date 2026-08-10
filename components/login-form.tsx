@@ -81,19 +81,46 @@ export function LoginForm() {
     setIsPending(true)
     const supabase = createClient()
 
-    const { error } = await supabase.auth.signInWithPassword({
-      email: email.trim(),
-      password,
-    })
+       const { data, error } = await supabase.auth.signInWithPassword({
+         email: email.trim(),
+         password,
+       });
 
-    if (error) {
-      setErrors({ form: translateSignInError(error.message) })
-      setIsPending(false)
-      return
-    }
+       if (error) {
+         setErrors({ form: translateSignInError(error.message) });
+         setIsPending(false);
+         return;
+       }
 
-    router.push("/dashboard")
-    router.refresh()
+       const userId = data.user?.id;
+
+       if (!userId) {
+         setErrors({ form: "No se pudo obtener la información del usuario." });
+         setIsPending(false);
+         return;
+       }
+
+       const { data: profile, error: profileError } = await supabase
+         .from("profiles")
+         .select("role")
+         .eq("id", userId)
+         .single();
+
+       if (profileError || !profile) {
+         setErrors({
+           form: "No se pudo obtener el tipo de usuario.",
+         });
+         setIsPending(false);
+         return;
+       }
+
+       if (profile.role === "cliente") {
+         router.push("/catalogo");
+       } else {
+         router.push("/dashboard");
+       }
+
+       router.refresh();
   }
 
   return (
