@@ -169,7 +169,7 @@ export function AppSidebar() {
                 href={item.href}
                 className={`group flex items-center justify-between rounded-xl px-4 py-3 transition-all duration-300 ${
                   isActive
-                    ? "bg-blue-600 text-white shadow-lg shadow-blue-600/30"
+                    ? "bg-sky-600 text-white shadow-lg shadow-sky-600/25"
                     : "text-slate-300 hover:bg-slate-800 hover:text-white"
                 }`}
               >
@@ -180,7 +180,7 @@ export function AppSidebar() {
                     className={`text-lg transition-colors ${
                       isActive
                         ? "text-white"
-                        : "text-slate-400 group-hover:text-blue-400"
+                        : "text-slate-400 group-hover:text-sky-400"
                     }`}
                   />
                   <span className="font-medium">{item.name}</span>
@@ -208,7 +208,7 @@ export function AppSidebar() {
         <div className="border-t border-slate-800 p-3">
           <div className="flex items-center justify-between rounded-xl border border-transparent bg-slate-900/50 p-2 transition-all duration-300 hover:border-slate-700 hover:bg-slate-800">
             <div className="flex min-w-0 items-center gap-3 overflow-hidden">
-              <div className="relative flex size-11 shrink-0 items-center justify-center rounded-full bg-gradient-to-r from-blue-500 to-cyan-500 font-bold text-sm text-white shadow-md">
+              <div className="relative flex size-11 shrink-0 items-center justify-center rounded-full bg-gradient-to-r from-sky-500 to-cyan-400 font-bold text-sm text-white shadow-md">
                 {initials}
                 {user && (
                   <span className="absolute right-0 bottom-0 size-3 rounded-full border-2 border-slate-900 bg-green-500" />
@@ -221,7 +221,7 @@ export function AppSidebar() {
                 <p className="mt-0.5 truncate text-[11px] text-slate-400">
                   {user?.email ?? ""}
                 </p>
-                <p className="mt-1 truncate text-[11px] font-bold tracking-wider text-blue-400 uppercase">
+                <p className="mt-1 truncate text-[11px] font-bold tracking-wider text-sky-400 uppercase">
                   Administrador
                 </p>
               </div>
