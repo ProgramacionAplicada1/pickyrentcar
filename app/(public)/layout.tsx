@@ -17,7 +17,6 @@ export default async function PublicLayout({
   children: React.ReactNode
 }) {
   const user = await getCurrentUser()
-  const isAuthenticated = Boolean(user)
   const isAdmin = user?.role === "admin"
 
   return (
@@ -48,7 +47,7 @@ export default async function PublicLayout({
             >
               Vehículos
             </Link>
-            {!isAuthenticated ? (
+            {!user ? (
               <Button
                 variant="outline"
                 size="sm"
