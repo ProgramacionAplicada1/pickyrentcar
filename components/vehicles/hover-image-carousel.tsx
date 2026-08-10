@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import Image from "next/image"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { Car01Icon } from "@hugeicons/core-free-icons"
 
@@ -97,11 +98,12 @@ export function HoverImageCarousel({
         >
           <CarouselContent className="ml-0">
             {images.map((url, i) => (
-              <CarouselItem key={url + i} className="pl-0">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
+              <CarouselItem key={url + i} className="relative aspect-[4/3] pl-0">
+                <Image
                   src={url}
                   alt={`${alt} — foto ${i + 1}`}
+                  fill
+                  sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
                   className={cn(
                     "size-full object-cover transition-transform duration-300",
                     zoomOnHover && "group-hover:scale-105",
@@ -112,10 +114,11 @@ export function HoverImageCarousel({
           </CarouselContent>
         </Carousel>
       ) : cover ? (
-        /* eslint-disable-next-line @next/next/no-img-element */
-        <img
+        <Image
           src={cover}
           alt={alt}
+          fill
+          sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
           className={cn(
             "size-full object-cover transition-transform duration-300",
             zoomOnHover && "group-hover:scale-105",
