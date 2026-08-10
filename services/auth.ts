@@ -1,3 +1,5 @@
+import { cache } from "react"
+
 import { createClient } from "@/lib/supabase/server"
 
 export type AuthRole = "admin" | "cliente"
@@ -9,7 +11,7 @@ export type AuthUser = {
   displayName: string
 }
 
-export async function getCurrentUser(): Promise<AuthUser | null> {
+export const getCurrentUser = cache(async function getCurrentUser(): Promise<AuthUser | null> {
   const supabase = await createClient()
   const {
     data: { user },
@@ -44,4 +46,4 @@ const role: AuthRole = profileRole;
     role,
     displayName,
   }
-}
+})

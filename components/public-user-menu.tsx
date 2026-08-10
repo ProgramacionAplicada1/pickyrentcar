@@ -54,7 +54,7 @@ export function PublicUserMenu({ displayName, email }: Props) {
         render={
           <button
             type="button"
-            className="flex h-10 items-center gap-2 rounded-full border bg-background px-1.5 pr-2.5 text-sm font-medium shadow-sm transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            className="flex h-10 items-center gap-2 rounded-full border bg-background px-1.5 pr-2.5 text-sm font-medium text-foreground shadow-sm transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             aria-label="Abrir menú de usuario"
           />
         }
