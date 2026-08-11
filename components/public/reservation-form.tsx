@@ -55,7 +55,8 @@ export function ReservationForm({
     const diff = Math.round(
       (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24),
     )
-    return diff >= 0 ? diff + 1 : 0
+   
+    return diff > 0 ? diff : 0
   }, [startDate, endDate])
 
   const total = days * Number(dailyPrice)

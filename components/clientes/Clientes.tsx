@@ -8,30 +8,51 @@ import { ClientsTable } from "./TablaCliente";
 
 type Props = { clientes: CLIENTE[] };
 
+
+const normalizarTexto = (texto?: string) => {
+  if (!texto) return "";
+  return texto
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim();
+};
+
 export function ClientsPageClient({ clientes: clients }: Props) {
+  const [buscar, setBuscar] = useState(""); 
+  const [tipo, setTipo] = useState("todos"); 
+  const [estado, setEstado] = useState("todos");
 
-  const [buscar, setBuscar] = useState("") // para lo que el usuario busca
-  const [tipo, setTipo] = useState("todos")  //para tipo osea si es registrado o invitado
-  const [estado, setEstado] = useState("todos") //para el estado en el que esta el cliente
+  
+  const busquedaNormalizada = normalizarTexto(buscar);
+
   const FiltradoClientes = clients.filter((cliente) => {
-    const matchesSearch =
-      cliente.nombre.toLowerCase().includes(buscar.toLowerCase()) ||
-      cliente.email.toLowerCase().includes(buscar.toLowerCase()) ||
-      cliente.telefono.includes(buscar);
-
+    
     const matchesTipo = tipo === "todos" || cliente.tipo === tipo;
     const matchesEstado = estado === "todos" || cliente.estado === estado;
 
-    return matchesSearch && matchesTipo && matchesEstado;
-  });
+    
+    if (!matchesTipo || !matchesEstado) return false;
 
+    
+    if (!busquedaNormalizada) return true;
 
   
+    const nombreNormalizado = normalizarTexto(cliente.nombre);
+    const emailNormalizado = normalizarTexto(cliente.email);
+    const telefono = cliente.telefono || ""; 
+
+    return (
+      nombreNormalizado.includes(busquedaNormalizada) ||
+      emailNormalizado.includes(busquedaNormalizada) ||
+      telefono.includes(busquedaNormalizada)
+    );
+  });
+
   return (
     <div className="space-y-6 p-6">
       <div>
         <h1 className="text-3xl font-bold">Clientes</h1>
-
         <p className="text-muted-foreground">
           Clientes que han reservado tus vehiculos.
         </p>
