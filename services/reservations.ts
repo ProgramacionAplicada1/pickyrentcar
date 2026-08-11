@@ -1,88 +1,110 @@
-import { revalidatePath } from "next/cache"
+import { revalidatePath } from "next/cache";
 
-import { createClient } from "@/lib/supabase/server"
+import { createClient } from "@/lib/supabase/server";
 import {
   RESERVATION_STATUSES,
   type ReservationStatus,
   nextReservationStatus,
-} from "@/lib/vehicles/reservation-status"
+} from "@/lib/vehicles/reservation-status";
 
 // ============================================================================
 // Types
 // ============================================================================
 
 export type ReservationRow = {
-  id: string
-  numero: string
-  client_name: string
-  client_email: string | null
-  client_phone: string
-  start_date: string
-  end_date: string
-  days: number
-  daily_price: number
-  total_price: number
-  status: string
-  notes: string | null
-  location: string | null
-  created_at: string
-  updated_at: string
+  id: string;
+  numero: string;
+  client_name: string;
+  client_email: string | null;
+  client_phone: string;
+  start_date: string;
+  end_date: string;
+  days: number;
+  daily_price: number;
+  total_price: number;
+  status: string;
+  notes: string | null;
+  location: string | null;
+  created_at: string;
+  updated_at: string;
   vehicle: {
-    id: string
-    brand: string
-    model: string
-    year: number
-    plate: string
-    image_urls: string[]
-    nombre: string | null
-    status: string
-  }
-}
+    id: string;
+    brand: string;
+    model: string;
+    year: number;
+    plate: string;
+    image_urls: string[];
+    nombre: string | null;
+    status: string;
+    category: string;
+    transmission: string;
+    fuel_type: string;
+  };
+};
 
 export type ReservationStats = {
-  total: number
-  activas: number
-  hoy: number
-  facturado: number
-}
+  total: number;
+  activas: number;
+  hoy: number;
+  facturado: number;
+};
 
 export type ReservationMutationResult = {
-  ok: boolean
-  error?: string
-}
+  ok: boolean;
+  error?: string;
+};
 
 // ============================================================================
 // Helpers
 // ============================================================================
 
 function isReservationStatus(value: string): value is ReservationStatus {
-  return (RESERVATION_STATUSES as readonly string[]).includes(value)
+  return (RESERVATION_STATUSES as readonly string[]).includes(value);
 }
 
 function normalizeImageUrls(value: unknown): string[] {
-  return Array.isArray(value) ? (value as string[]) : []
+  return Array.isArray(value) ? (value as string[]) : [];
 }
 
 // ============================================================================
 // Queries
 // ============================================================================
 
-export async function listReservations(): Promise<ReservationRow[]> {
-  const supabase = await createClient()
+export async function listReservations(
+  startDate?: string,
+  endDate?: string,
+): Promise<ReservationRow[]> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return [];
+
+  // Defense-in-depth: pre-fetch IDs de vehículos del admin y filtrar
+  // por ellos. Aunque RLS esté roto (ej. política huérfana), esto limita
+  // el resultado a vehículos propios.
+  const { data: ownedVehicles } = await supabase
+    .from("vehicles")
+    .select("id")
+    .eq("created_by", user.id);
+  const ownedVehicleIds = (ownedVehicles ?? []).map((v) =>
+    String((v as { id: string }).id),
+  );
+  if (ownedVehicleIds.length === 0) return [];
+
   const { data } = await supabase
     .from("reservations")
     .select(
-      "id, numero, client_name, client_email, client_phone, start_date, end_date, days, daily_price, total_price, status, notes, location, created_at, updated_at, vehicles:vehicle_id(id, brand, model, year, plate, image_urls, nombre, status)",
+      "id, numero, client_name, client_email, client_phone, start_date, end_date, days, daily_price, total_price, status, notes, location, created_at, updated_at, vehicles:vehicle_id(id, brand, model, year, plate, image_urls, nombre, status, category, transmission, fuel_type)",
     )
-    .order("created_at", { ascending: false })
+    .in("vehicle_id", ownedVehicleIds)
+    .order("created_at", { ascending: false });
 
   return (data ?? []).map((row) => {
-    const rawVehicle = (
-      row as { vehicles: unknown }
-    ).vehicles
+    const rawVehicle = (row as { vehicles: unknown }).vehicles;
     const vehicle = Array.isArray(rawVehicle)
       ? rawVehicle[0]
-      : (rawVehicle as ReservationRow["vehicle"] | null)
+      : (rawVehicle as ReservationRow["vehicle"] | null);
 
     return {
       id: String((row as { id: string }).id),
@@ -110,29 +132,48 @@ export async function listReservations(): Promise<ReservationRow[]> {
         image_urls: normalizeImageUrls(vehicle?.image_urls),
         nombre: vehicle?.nombre ?? null,
         status: String(vehicle?.status ?? ""),
+        category: String(vehicle?.category ?? ""),
+        transmission: String(vehicle?.transmission ?? ""),
+        fuel_type: String(vehicle?.fuel_type ?? ""),
       },
-    } satisfies ReservationRow
-  })
+    } satisfies ReservationRow;
+  });
 }
 
 export async function getReservationById(
   id: string,
 ): Promise<ReservationRow | null> {
-  const supabase = await createClient()
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return null;
+
+  // Defense-in-depth: pre-fetch owned vehicle IDs y filtrar.
+  const { data: ownedVehicles } = await supabase
+    .from("vehicles")
+    .select("id")
+    .eq("created_by", user.id);
+  const ownedVehicleIds = (ownedVehicles ?? []).map((v) =>
+    String((v as { id: string }).id),
+  );
+  if (ownedVehicleIds.length === 0) return null;
+
   const { data } = await supabase
     .from("reservations")
     .select(
-      "id, numero, client_name, client_email, client_phone, start_date, end_date, days, daily_price, total_price, status, notes, location, created_at, updated_at, vehicles:vehicle_id(id, brand, model, year, plate, image_urls, nombre, status)",
+      "id, numero, client_name, client_email, client_phone, start_date, end_date, days, daily_price, total_price, status, notes, location, created_at, updated_at, vehicles:vehicle_id(id, brand, model, year, plate, image_urls, nombre, status, category, transmission, fuel_type)",
     )
     .eq("id", id)
-    .maybeSingle()
+    .in("vehicle_id", ownedVehicleIds)
+    .maybeSingle();
 
-  if (!data) return null
+  if (!data) return null;
 
-  const rawVehicle = (data as { vehicles: unknown }).vehicles
+  const rawVehicle = (data as { vehicles: unknown }).vehicles;
   const vehicle = Array.isArray(rawVehicle)
     ? rawVehicle[0]
-    : (rawVehicle as ReservationRow["vehicle"] | null)
+    : (rawVehicle as ReservationRow["vehicle"] | null);
 
   return {
     id: String((data as { id: string }).id),
@@ -160,93 +201,182 @@ export async function getReservationById(
       image_urls: normalizeImageUrls(vehicle?.image_urls),
       nombre: vehicle?.nombre ?? null,
       status: String(vehicle?.status ?? ""),
+      category: String(vehicle?.category ?? ""),
+      transmission: String(vehicle?.transmission ?? ""),
+      fuel_type: String(vehicle?.fuel_type ?? ""),
     },
-  } satisfies ReservationRow
+  } satisfies ReservationRow;
+}
+
+export async function getReservationsByStatus() {
+  const reservations = await listReservations();
+
+  const estados = [
+    "pendiente",
+    "confirmada",
+    "activa",
+    "finalizada",
+    "cancelada",
+  ];
+
+  return estados.map((estado) => ({
+    estado,
+    cantidad: reservations.filter(
+      (reservation) => reservation.status === estado,
+    ).length,
+  }));
 }
 
 export async function getReservationStats(): Promise<ReservationStats> {
-  const reservations = await listReservations()
-  const todayIso = new Date().toISOString().slice(0, 10)
+  const reservations = await listReservations();
+  const todayIso = new Date().toISOString().slice(0, 10);
 
-  const total = reservations.length
+  // Reservas con al menos un pago completado (auto-promoción + gate).
+  const reservationsWithPaidPayment =
+    await getReservationIdsWithCompletedPayment();
+
+  const total = reservations.length;
   const activas = reservations.filter(
-    (r) => r.status === "confirmada" || r.status === "activa",
-  ).length
+    (r) =>
+      (r.status === "confirmada" || r.status === "activa") &&
+      reservationsWithPaidPayment.has(r.id),
+  ).length;
   const hoy = reservations.filter(
     (r) => r.start_date <= todayIso && r.end_date >= todayIso,
-  ).length
-  const facturado = reservations
-    .filter((r) => r.status !== "cancelada")
-    .reduce((acc, r) => acc + Number(r.total_price), 0)
+  ).length;
+  const facturado = await getTotalFacturadoFromCompletedPagos(
+  reservations.map((reservation) => reservation.id),
+);
 
-  return { total, activas, hoy, facturado }
+  return { total, activas, hoy, facturado };
 }
 
+// ============================================================================
+// Internal helpers (payments-aware stats)
+// ============================================================================
+
+async function getReservationIdsWithCompletedPayment(): Promise<Set<string>> {
+  const { createClient } = await import("@/lib/supabase/server");
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("pagos")
+    .select("reservation_id")
+    .eq("estado", "completado");
+  const ids = new Set<string>();
+  for (const row of data ?? []) {
+    ids.add(String((row as { reservation_id: string }).reservation_id));
+  }
+  return ids;
+}
+
+export async function getReservationsWithPaymentStatus(): Promise<Set<string>> {
+  return getReservationIdsWithCompletedPayment();
+}
+
+async function getTotalFacturadoFromCompletedPagos(
+  reservationIds: string[],
+): Promise<number> {
+  if (reservationIds.length === 0) {
+    return 0;
+  }
+
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from("pagos")
+    .select("monto")
+    .eq("estado", "completado")
+    .in("reservation_id", reservationIds);
+
+  if (error) {
+    console.error("ERROR OBTENIENDO FACTURACIÓN:", error);
+    return 0;
+  }
+
+  return (data ?? []).reduce(
+    (acc, row) => acc + Number((row as { monto: number }).monto),
+    0,
+  );
+}
 // ============================================================================
 // Mutations
 // ============================================================================
 
+
+
 export async function advanceReservationStatus(
   reservationId: string,
 ): Promise<ReservationMutationResult> {
-  const supabase = await createClient()
+  const supabase = await createClient();
   const {
     data: { user },
-  } = await supabase.auth.getUser()
-  if (!user) return { ok: false, error: "Sesión expirada." }
+  } = await supabase.auth.getUser();
+  if (!user) return { ok: false, error: "Sesión expirada." };
 
   const { data: row } = await supabase
     .from("reservations")
     .select("status")
     .eq("id", reservationId)
-    .maybeSingle()
+    .maybeSingle();
 
-  if (!row) return { ok: false, error: "La reserva no existe." }
+  if (!row) return { ok: false, error: "La reserva no existe." };
 
-  const current = (row as { status: string }).status
+  const current = (row as { status: string }).status;
   if (!isReservationStatus(current)) {
-    return { ok: false, error: "Estado actual no reconocido." }
+    return { ok: false, error: "Estado actual no reconocido." };
   }
 
-  const next = nextReservationStatus(current)
+  const next = nextReservationStatus(current);
+
+  console.log("ESTADO ACTUAL:", current);
+  console.log("SIGUIENTE ESTADO:", next);
+  console.log("RESERVA:", reservationId);
+  
   if (!next) {
-    return { ok: false, error: "No hay siguiente estado disponible." }
+    return { ok: false, error: "No hay siguiente estado disponible." };
   }
 
   const { error } = await supabase
     .from("reservations")
     .update({ status: next })
-    .eq("id", reservationId)
+    .eq("id", reservationId);
 
   if (error) {
-    return { ok: false, error: "No se pudo actualizar el estado." }
+    console.error("ERROR ACTUALIZANDO RESERVA:", error);
+
+    return {
+      ok: false,
+      error: error.message,
+    };
   }
 
-  revalidatePath("/dashboard")
-  revalidatePath("/dashboard/reservas")
-  revalidatePath(`/dashboard/reservas/${reservationId}`)
-  return { ok: true }
+  revalidatePath("/dashboard");
+  revalidatePath("/dashboard/reservas");
+  revalidatePath(`/dashboard/reservas/${reservationId}`);
+  return { ok: true };
 }
+
+
 
 export async function cancelReservation(
   reservationId: string,
 ): Promise<ReservationMutationResult> {
-  const supabase = await createClient()
+  const supabase = await createClient();
   const {
     data: { user },
-  } = await supabase.auth.getUser()
-  if (!user) return { ok: false, error: "Sesión expirada." }
+  } = await supabase.auth.getUser();
+  if (!user) return { ok: false, error: "Sesión expirada." };
 
   const { error } = await supabase
     .from("reservations")
     .update({ status: "cancelada" })
-    .eq("id", reservationId)
+    .eq("id", reservationId);
 
   if (error) {
-    return { ok: false, error: "No se pudo cancelar la reserva." }
+    return { ok: false, error: "No se pudo cancelar la reserva." };
   }
 
-  revalidatePath("/dashboard/reservas")
-  revalidatePath(`/dashboard/reservas/${reservationId}`)
-  return { ok: true }
+  revalidatePath("/dashboard/reservas");
+  revalidatePath(`/dashboard/reservas/${reservationId}`);
+  return { ok: true };
 }

@@ -1,7 +1,7 @@
 # 🚗 PickyRentCar
 
 
->  Proyecto en desarrollo activo. Este README se ira actualizando conforme avance la implementacion.
+>  Proyecto en desarrollo activo. Este README se ira actualizando conforme avance la implementación.
 
 ---
 
@@ -11,7 +11,7 @@
 - [Funcionalidades](#-funcionalidades)
 - [Tecnologias utilizadas](#-tecnologias-utilizadas)
 - [Requisitos previos](#-requisitos-previos)
-- [Instalacion y configuración](#-instalación-y-configuracion)
+- [Instalación y configuración](#-instalación-y-configuracion)
 - [Autenticación con Supabase](#-autenticación-con-supabase)
 - [Variables de entorno](#-variables-de-entorno)
 - [Estructura del proyecto](#-estructura-del-proyecto)
@@ -36,26 +36,49 @@ El proyecto busca aplicar los conocimientos adquiridos en la asignatura mediante
 
 ### Implementadas
 
-- Configuracion inicial del proyecto con Next.js.
-- Integracion con Supabase.
-- Configuracion del entorno de desarrollo.
-- Inicio de sesion.
-- Despliegue automatico mediante Vercel.
-- Pantalla con siderBar.
+**Autenticación y roles**
+- Dos rutas de registro separadas (`/register` admin, `/register-client` cliente) con `role` whitelisted por trigger de Supabase.
+- Login unificado con redirección role-aware (admin → `/dashboard`, cliente → `next` validado o `/catalogo`).
+- Refresh de sesión en cada request vía middleware (`proxy.ts`).
+- Tres roles diferenciados: administrador, cliente autenticado y visitante anónimo.
+
+**Catálogo público (accesible sin login)**
+- Búsqueda por texto, filtro por rango de fechas, categoría y ordenamiento (precio/año).
+- Filtro **real** por disponibilidad usando RPC `check_vehicle_availability`.
+- Vista detalle con galería de hasta 5 imágenes, especificaciones y calendario interactivo (fix de zona horaria con `parseLocalDate`).
+
+**Cliente autenticado**
+- **Mis reservas**: listado y detalle de reservas propias con RLS por `client_id`.
+- **Favoritos**: tabla persistente con RLS por `user_id`.
+- **Perfil editable**: nombre, teléfono, avatar (column-level GRANT impide modificar `role`).
+- **Cambio de contraseña** desde Supabase Auth.
+- **Pago por transferencia** con datos bancarios y reporte al admin.
+
+**Panel administrativo**
+- Dashboard con saludo personalizado, fecha localizada en español y stats por estado con barras de progreso.
+- CRUD completo de vehículos con hasta 5 imágenes por vehículo.
+- Vista grid/table, carrusel en hover, vista detalle con galería.
+- Catálogo cerrado de ~83 marcas incluyendo Rolls-Royce con 30 modelos clásicos.
+- Gestión de reservas con tabs por estado y drawer de detalle.
+- Módulo de pagos: registro, edición y auto-promoción de reserva al completar pago.
+- Dashboard de clientes: agregación por cliente (registrado/invitado, total pagado).
+- Reportes: ingresos mensuales (recharts) y vehículos más rentados.
+- Configuración: persistencia real del nombre admin + cambio de contraseña.
+
+**Plataforma**
+- Despliegue automático en Vercel con 23 rutas server-rendered.
+- Subida directa de imágenes cliente → Storage con barra de progreso real (XHR + `upload.onprogress`).
+- Botones "Volver" con historial del navegador (`router.back()` cuando aplica).
+- Multi-tenant seguro: cada admin solo ve sus vehículos y reservas (RLS `auth.uid() = created_by`).
 
 ### En desarrollo
 
-- Catalogo de vehiculos disponibles.
-- Busqueda y filtrado de vehiculos por categoría, marca, precio y disponibilidad.
-- Visualizacion del detalle de cada vehiculo (imagenes, especificaciones y precio por día).
-- Sistema de reservas de vehiculos.
-- Gestion de disponibilidad de vehiculos.
-- Historial de reservas de los usuarios.
-- Panel de administracion.
-- Gestion de vehículos (crear, editar, eliminar y listar).
-- Gestion de usuarios y clientes.
-- Reportes basicos de alquileres y reservas.
-- Edicion del perfil de usuario.
+- Método de pago **Efectivo** (UI lista, falta server action).
+- Datos bancarios reales en `/pagar/transferencia` (actualmente placeholder).
+- Limpieza periódica de archivos huérfanos en Storage vía pg_cron.
+- Flujo de reserva por pasos con recogida, devolución y extras.
+- Notificaciones por email al crear reserva (Resend/SES).
+- Integración con pasarela de pago real (Stripe/LibrePay) — opcional.
 
 
 
@@ -63,18 +86,25 @@ El proyecto busca aplicar los conocimientos adquiridos en la asignatura mediante
 
 ## 🛠️ Tecnologias utilizadas
 
-| Categoria | Tecnologia |
-|---|---|
-| Framework Frontend/Backend | [Next.js](https://nextjs.org/) (App Router) |
-| Lenguaje | TypeScript |
-| Base de datos y backend | [Supabase](https://supabase.com/) (PostgreSQL, Auth, Storage) |
-| Autenticacion | [@supabase/ssr](https://supabase.com/docs/guides/auth/server-side/nextjs) (clientes browser/server + middleware) |
-| Componentes UI | [shadcn/ui](https://ui.shadcn.com/) |
-| Estilos | Tailwind CSS |
-| Linter | ESLint |
-| Control de versiones | Git & GitHub |
-| Editor | Visual Studio Code |
-| Despliegue | [Vercel](https://vercel.com/) |
+| Categoria | Tecnologia | Versión |
+|---|---|---|
+| Framework Frontend/Backend | [Next.js](https://nextjs.org/) (App Router, dev con `--webpack`) | 16.2.10 |
+| UI | [React](https://react.dev/) | 19.2.4 |
+| Lenguaje | [TypeScript](https://www.typescriptlang.org/) (strict mode) | 5.x |
+| Estilos | [Tailwind CSS](https://tailwindcss.com/) | v4 |
+| Componentes | [shadcn/ui](https://ui.shadcn.com/) (style: `base-maia`) + @base-ui/react | 1.6.0 |
+| Iconos | [Hugeicons](https://hugeicons.com/) + react-icons (Fa/Fi) | 4.2.2 / 5.7.0 |
+| Fuentes | Geist + Geist Mono + Figtree | — |
+| Base de datos y backend | [Supabase](https://supabase.com/) (PostgreSQL, Auth, Storage) | — |
+| Autenticacion | [@supabase/ssr](https://supabase.com/docs/guides/auth/server-side/nextjs) + @supabase/supabase-js | 0.12.0 / 2.110.2 |
+| Calendario | react-day-picker + date-fns | 10.0.1 / 4.4.0 |
+| Carrusel | embla-carousel-react + embla-carousel-autoplay | 8.6.0 |
+| Toasts | [sonner](https://sonner.emilkowal.ski/) | 2.0.7 |
+| Gráficos | [recharts](https://recharts.org/) | 3.10.1 |
+| Tema | next-themes | 0.4.6 |
+| Gestor de paquetes | npm / pnpm | — |
+| Linter | ESLint + eslint-config-next | 9 / 16.2.10 |
+| Build target | [Vercel](https://vercel.com/) | — |
 
 ---
 
@@ -82,8 +112,8 @@ El proyecto busca aplicar los conocimientos adquiridos en la asignatura mediante
 
 Para ejecutar **PickyRentCar** en un entorno local, asegurate de cumplir con los siguientes requisitos:
 
-- **Node.js** (versión 18 o superior).
-- **npm** (incluido con Node.js).
+- **Node.js** versión 20 o superior (requerido por Next.js 16).
+- **npm** (incluido con Node.js) o **pnpm** como gestor de paquetes alternativo.
 - **Git** para clonar el repositorio.
 - **Visual Studio Code**.
 - Una cuenta de **Supabase** con un proyecto configurado.
@@ -92,7 +122,7 @@ Para ejecutar **PickyRentCar** en un entorno local, asegurate de cumplir con los
 > **Nota:** Vercel solo es necesario si deseas desplegar la aplicacion en produccion.
 ---
 
-## ⚙️ Instalacion y configuracion
+## ⚙️ Instalación y configuración
 
 1. **Clonar el repositorio**
    ```bash
@@ -100,9 +130,11 @@ Para ejecutar **PickyRentCar** en un entorno local, asegurate de cumplir con los
    cd pickyrentcar
    ```
 
-2. **Instalar dependencias**
+2. **Instalar dependencias** (con npm o pnpm, ambos funcionan)
    ```bash
    npm install
+   # o equivalentemente:
+   pnpm install
    ```
 
 3. **Configurar las variables de entorno**
@@ -112,6 +144,8 @@ Para ejecutar **PickyRentCar** en un entorno local, asegurate de cumplir con los
 4. **Ejecutar el proyecto en modo desarrollo**
    ```bash
    npm run dev
+   # o equivalentemente:
+   pnpm dev
    ```
 
 5. Abre [http://localhost:3000](http://localhost:3000) en tu navegador para ver la aplicacion.
@@ -140,8 +174,9 @@ Ademas, `lib/utils.ts` incluye el helper `cn()` (combinacion de `clsx` + `tailwi
 ```env
 NEXT_PUBLIC_SUPABASE_URL=tu_supabase_url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=tu_supabase_anon_key
-SUPABASE_SERVICE_ROLE_KEY=tu_supabase_service_role_key
 ```
+
+> **Nota:** No se requiere `SUPABASE_SERVICE_ROLE_KEY`. El catálogo público usa RPCs con `SECURITY DEFINER` (migración `004`) que bypasean RLS sin necesidad de la clave de servicio. Mantener la clave fuera del cliente es una decisión de seguridad deliberada.
 
 
 
@@ -151,45 +186,80 @@ SUPABASE_SERVICE_ROLE_KEY=tu_supabase_service_role_key
 
 ```
 pickyrentcar/
-├── app/
-│   ├── auth/
-│   │   └── callback/
-│   │       └── route.ts        # Route Handler: callback de autenticacion (OAuth)
-│   ├── dashboard/
-│   │   └── page.tsx            # Panel de administracion
-│   ├── login/
-│   │   └── page.tsx            # Página de inicio de sesion
-│   ├── register/
-│   │   └── page.tsx            # Página de registro de usuarios
-│   ├── favicon.ico
-│   ├── globals.css             # Estilos globales
-│   ├── layout.tsx              # Layout raiz de la aplicación
-│   └── page.tsx                # Pagina principal
+├── app/                              # Rutas de Next.js App Router
+│   ├── (public)/                     # Grupo de rutas sin auth (anon puede entrar)
+│   │   ├── catalogo/                 # Catálogo público + detalle + reserva + gracias
+│   │   │   ├── [vehicleId]/          # Detalle público + galería + calendario
+│   │   │   │   └── reservar/         # Server action de reserva
+│   │   │   └── gracias/              # Confirmación post-reserva
+│   │   ├── favoritos/                # Favoritos del cliente autenticado
+│   │   ├── mis-reservas/             # Reservas propias + flujo de pago
+│   │   │   └── [id]/pagar/           # Pago por transferencia (transferencia/)
+│   │   └── perfil/                   # Perfil editable + cambio de contraseña
+│   ├── api/                          # Route Handlers
+│   │   ├── pagos/reservations/       # Lista reservas pendientes de pago
+│   │   └── storage/cleanup/          # Limpia archivos huérfanos vía sendBeacon
+│   ├── auth/callback/                # OAuth code exchange
+│   ├── dashboard/                    # Panel administrativo (auth guard)
+│   │   ├── clientes/                 # Agregación de clientes del admin
+│   │   ├── configuracion/            # Perfil admin + cambio de contraseña
+│   │   ├── pagos/                    # Módulo de pagos + payment-modal
+│   │   ├── reportes/                 # Ingresos mensuales + vehículos más rentados
+│   │   ├── reservas/                 # Tabs por estado + drawer de detalle
+│   │   │   ├── components/           # cards/, drawer/, layout/
+│   │   │   ├── data/                 # mockReservations (legacy)
+│   │   │   └── lib/                  # adapter
+│   │   └── vehicles/                 # CRUD completo con upload de imágenes
+│   │       ├── [id]/                 # Detalle + edición
+│   │       └── new/                  # Crear vehículo
+│   ├── login/                        # Login unificado role-aware
+│   ├── register/                     # Registro admin
+│   ├── register-client/              # Registro cliente
+│   ├── globals.css                   # Tema oklch + tokens shadcn
+│   ├── layout.tsx                    # RootLayout con fuentes + Toaster
+│   └── page.tsx                      # Landing page pública
 ├── components/
-│   ├── icons/
-│   │   └── google-icon.tsx     # Icono de Google (SVG)
-│   ├── ui/                     # Componentes base de shadcn/ui
-│   ├── google-signin-button.tsx # Boton de inicio de sesion con Google
-│   ├── login-form.tsx          # Formulario de inicio de sesion
-│   └── register-form.tsx       # Formulario de registro
+│   ├── ui/                           # Componentes base de shadcn/ui (button, dialog, etc.)
+│   ├── vehicles/                     # UI específica de vehículos (upload, cards, gallery)
+│   ├── public/                       # Componentes del catálogo público
+│   ├── clientes/                     # Dashboard de clientes (Clientes, TablaCliente, etc.)
+│   ├── reportes/                     # Charts de reportes (grafico-ingresos, vehiculos-mas-rentados)
+│   ├── icons/                        # Iconos SVG inline
+│   ├── app-sidebar.tsx               # Sidebar del dashboard
+│   ├── site-header.tsx               # Header del dashboard
+│   ├── register-form.tsx             # Registro admin
+│   ├── login-form.tsx                # Login
+│   ├── client-register-form.tsx      # Registro cliente
+│   ├── client-profile-form.tsx       # Edición de perfil
+│   ├── change-password-form.tsx      # Cambio de contraseña
+│   ├── google-signin-button.tsx      # OAuth Google
+│   ├── logout-dialog-button.tsx      # Confirmación de logout
+│   ├── public-user-menu.tsx          # DropdownMenu del header público (cliente)
+│   └── public-footer.tsx             # Footer público
 ├── lib/
-│   ├── supabase/
-│   │   ├── client.ts           # Cliente de Supabase para el navegador
-│   │   ├── server.ts           # Cliente de Supabase para Server Components
-│   │   └── middleware.ts       # Logica de refresco de sesion (updateSession)
-│   └── utils.ts                # Helper cn() para clases de Tailwind
-├── public/                     # Archivos estaticos (imagenes, iconos, logo)
-├── .env.local                  # Variables de entorno (no se sube al repo)
-├── .gitignore
-├── components.json             # Configuracion de shadcn/ui
-├── eslint.config.mjs           # Configuracion de ESLint
-├── next.config.ts              # Configuracion de Next.js
-├── postcss.config.mjs          # Configuracion de PostCSS/Tailwind
-├── proxy.ts                    # Middleware: refresca la sesion en cada request
-├── tsconfig.json                # Configuracion de TypeScript
-├── package.json
-├── AGENTS.md
-├── CLAUDE.md
+│   ├── supabase/                     # Clientes Supabase (browser/server/middleware)
+│   ├── storage/                      # Upload directo cliente → Storage (upload-client.ts)
+│   ├── utils/                        # Helpers (formatCurrency)
+│   ├── utils.ts                      # Helper cn()
+│   └── vehicles/                     # Catálogo cerrado (~83 marcas, modelos Rolls-Royce)
+├── services/                         # Lógica de negocio separada de pages
+│   ├── auth.ts                       # getCurrentUser() con React.cache()
+│   ├── vehicles.ts                   # CRUD + getMostRentedVehicles
+│   ├── reservations.ts               # Stats payment-aware
+│   ├── catalog.ts                    # RPCs públicos + createPublicReservation
+│   ├── clients.ts                    # getClientsByOwner (agregación)
+│   ├── favorites.ts                  # getFavoriteVehicleIds
+│   ├── my-reservations.ts            # Reservas del cliente autenticado
+│   ├── profile.ts                    # getClientProfile
+│   └── payments.ts                   # Auto-promoción de reserva al completar pago
+├── supabase/
+│   └── migrations/                   # 15 migraciones SQL idempotentes (000-015)
+├── public/                           # Assets estáticos (logos, hero images)
+├── proxy.ts                          # Middleware Next.js 16 (refresh de sesión)
+├── next.config.ts                    # Config de Next.js + remotePatterns
+├── tsconfig.json                     # Excluye public/ del typecheck
+├── components.json                   # shadcn/ui (base-maia, iconLibrary: hugeicons)
+├── package.json                      # Scripts con npm/pnpm
 └── README.md
 ```
 
@@ -199,10 +269,10 @@ pickyrentcar/
 
 | Comando | Descripcion |
 |---|---|
-| `npm run dev` | Inicia el servidor de desarrollo |
-| `npm run build` | Genera la build de produccion |
-| `npm run start` | Inicia la aplicacion en modo produccion |
-| `npm run lint` | Ejecuta el linter para revisar el codigo |
+| `npm run dev` / `pnpm dev` | Inicia el servidor de desarrollo |
+| `npm run build` / `pnpm build` | Genera la build de producción |
+| `npm run start` / `pnpm start` | Inicia la aplicación en modo producción |
+| `npm run lint` / `pnpm lint` | Ejecuta el linter para revisar el código |
 
 ---
 
@@ -210,7 +280,7 @@ pickyrentcar/
 
 El proyecto esta desplegado en **Vercel**. Cada vez que se realiza un `push` a la rama `main`, en Vercel generara automaticamente un nuevo despliegue.
 
-🔗 Demo: `[https://pickyrentcar-tau.vercel.app/]`
+🔗 Demo: <https://pickyrentcar-tau.vercel.app/>
 
 Para desplegar manualmente:
 1. Conecta el repositorio de GitHub con tu cuenta de Vercel.

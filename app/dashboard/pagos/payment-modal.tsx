@@ -1,250 +1,87 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
-import { HugeiconsIcon } from "@hugeicons/react"
-import { Cancel01Icon, CreditCardIcon, Wallet01Icon, BankIcon, Add01Icon, Edit01Icon, Delete01Icon } from "@hugeicons/core-free-icons"
-import { Button } from "@/components/ui/button"
-import { createClient } from "@/lib/supabase/client"
+import * as React from "react";
+import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { Spinner } from "@/components/ui/spinner";
+import { formatCurrency } from "@/lib/utils/formatCurrency";
+import { updatePagoEstado as updatePagoEstadoAction } from "@/app/dashboard/pagos/actions";
 
-type PaymentMethod = "Tarjeta" | "Efectivo" | "Transferencia"
+type Metodo = "Efectivo" | "Transferencia";
 
+type Estado = "pendiente" | "completado" | "fallido" | "reembolsado";
 
-export function PaymentAction() {
-  const router = useRouter()
-  const [isOpen, setIsOpen] = useState(false)
-  
-  const [vehiculos, setVehiculos] = useState<any[]>([])
-  const [referencia, setReferencia] = useState("")
-  const [monto, setMonto] = useState("")
-  const [metodo, setMetodo] = useState<PaymentMethod>("Tarjeta")
-  const [isProcessing, setIsProcessing] = useState(false)
+type PagoListItem = {
+  id: string;
+  reservation_id: string;
+  monto: number;
+  metodo_pago: Metodo;
+  estado: Estado;
+  numero: string | null;
+  client_name: string | null;
+  vehicle_label: string | null;
+};
 
-  useEffect(() => {
-    async function fetchVehiculos() {
-      const supabase = createClient()
-      const { data } = await supabase
-        .from("vehicles")
-        .select("plate, brand, model, status")
-        .order("status", { ascending: false })
-      if (data) setVehiculos(data)
+// ============================================================================
+// Acciones por fila
+// ============================================================================
+
+export function PaymentRowActions({ pago }: { pago: PagoListItem }) {
+  const router = useRouter();
+
+  const [isProcessing, setIsProcessing] = React.useState(false);
+  const [error, setError] = React.useState<string | null>(null);
+
+  async function handleConfirmPayment() {
+    const confirmed = window.confirm(
+      `¿Confirmar el pago de ${pago.numero ?? "esta reserva"} por ${formatCurrency(
+        pago.monto,
+      )} mediante ${pago.metodo_pago}?`,
+    );
+
+    if (!confirmed) return;
+
+    setError(null);
+    setIsProcessing(true);
+
+    const result = await updatePagoEstadoAction(pago.id, "completado");
+
+    setIsProcessing(false);
+
+    if (!result.ok) { 
+      setError(result.error);
+      return;
     }
-    if (isOpen) fetchVehiculos()
-  }, [isOpen])
 
-  const onClose = () => {
-    setIsOpen(false)
-    setReferencia("")
-    setMonto("")
+    router.refresh();
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setIsProcessing(true)
-
-    const supabase = createClient()
-    const { error } = await supabase.from("pagos").insert({
-      numero_reserva: referencia, 
-      monto: Number(monto),
-      metodo_pago: metodo,
-      estado: "Completado"
-    })
-
-    setIsProcessing(false)
-
-    if (error) {
-      alert("Error al procesar el pago: " + error.message)
-      return
-    }
-
-    alert("¡Pago registrado con éxito!")
-    onClose()
-    router.refresh()
+  // Solo mostramos acciones para pagos pendientes.
+  if (pago.estado !== "pendiente") {
+    return null;
   }
 
   return (
-    <>
-      <Button onClick={() => setIsOpen(true)} className="rounded-full bg-slate-900 text-white hover:bg-slate-800">
-        <HugeiconsIcon icon={Add01Icon} strokeWidth={1.75} className="mr-2" />
-        Registrar Pago
+    <div className="flex flex-col items-end gap-1">
+      <Button
+        type="button"
+        size="sm"
+        variant="default"
+        className="rounded-full"
+        onClick={handleConfirmPayment}
+        disabled={isProcessing}
+      >
+        {isProcessing && <Spinner />}
+        {isProcessing ? "Confirmando…" : "Confirmar pago"}
       </Button>
 
-      {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-slate-950/45 backdrop-blur-sm" onClick={onClose} />
-          <div className="relative w-full max-w-md overflow-hidden rounded-3xl bg-white shadow-2xl">
-            <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4">
-              <h2 className="text-lg font-bold text-slate-900">Registrar Pago</h2>
-              <button onClick={onClose} className="text-slate-400 hover:text-slate-700">
-                <HugeiconsIcon icon={Cancel01Icon} strokeWidth={2} />
-              </button>
-            </div>
-
-            <form onSubmit={handleSubmit} className="p-6 space-y-4">
-              <div>
-                <label className="mb-1 block text-sm font-medium text-slate-700">Seleccionar Vehículo</label>
-                <select required value={referencia} onChange={(e) => setReferencia(e.target.value)} className="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 bg-white">
-                  <option value="" disabled>Elige el vehículo a pagar...</option>
-                  {vehiculos.map((v) => (
-                    <option key={v.plate} value={v.plate}>
-                      {v.brand} {v.model} ({v.plate}) - {v.status === 'in_use' ? ' Reservado' : ' Disponible'}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="mb-1 block text-sm font-medium text-slate-700">Monto (DOP)</label>
-                <input type="number" required min="1" value={monto} onChange={(e) => setMonto(e.target.value)} placeholder="0.00" className="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-primary focus:ring-2 focus:ring-primary/20" />
-              </div>
-
-              <div>
-                <label className="mb-2 block text-sm font-medium text-slate-700">Método de Pago</label>
-                <div className="grid grid-cols-3 gap-2">
-                  {(["Tarjeta", "Efectivo", "Transferencia"] as PaymentMethod[]).map((m) => (
-                    <button key={m} type="button" onClick={() => setMetodo(m)} className={`flex flex-col items-center gap-2 rounded-xl border p-3 text-xs font-semibold transition-all ${metodo === m ? "border-primary bg-primary/10 text-primary" : "border-slate-200 text-slate-600 hover:bg-slate-50"}`}>
-                      {m === "Tarjeta" && <HugeiconsIcon icon={CreditCardIcon} />}
-                      {m === "Efectivo" && <HugeiconsIcon icon={Wallet01Icon} />}
-                      {m === "Transferencia" && <HugeiconsIcon icon={BankIcon} />}
-                      {m}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="mt-6 flex gap-3">
-                <button type="button" onClick={onClose} className="flex-1 rounded-full border border-slate-200 py-3 font-semibold text-slate-700 hover:bg-slate-50">Cancelar</button>
-                <button type="submit" disabled={isProcessing || vehiculos.length === 0} className="flex-1 rounded-full bg-slate-900 py-3 font-semibold text-white hover:bg-slate-800 disabled:opacity-50">
-                  {isProcessing ? "Procesando..." : "Confirmar"}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
+      {error && (
+        <p className="text-xs text-destructive" role="alert">
+          {error}
+        </p>
       )}
-    </>
-  )
+    </div>
+  );
 }
 
-
-export function PaymentRowActions({ pago }: { pago: any }) {
-  const router = useRouter()
-  const [isEditOpen, setIsEditOpen] = useState(false)
-  
-  const [vehiculos, setVehiculos] = useState<any[]>([])
-  const [referencia, setReferencia] = useState(pago.numero_reserva)
-  const [monto, setMonto] = useState(pago.monto.toString())
-  const [metodo, setMetodo] = useState<PaymentMethod>(pago.metodo_pago)
-  const [isProcessing, setIsProcessing] = useState(false)
-
-  useEffect(() => {
-    async function fetchVehiculos() {
-      const supabase = createClient()
-      const { data } = await supabase.from("vehicles").select("plate, brand, model, status")
-      if (data) setVehiculos(data)
-    }
-    if (isEditOpen) fetchVehiculos()
-  }, [isEditOpen])
-
-  const handleDelete = async () => {
-    const confirmar = window.confirm(`¿Estás seguro de que deseas eliminar el pago de la reserva ${pago.numero_reserva}?`)
-    if (!confirmar) return
-
-    const supabase = createClient()
-    const { error } = await supabase.from("pagos").delete().eq("id", pago.id)
-
-    if (error) {
-      alert("Error al eliminar: " + error.message)
-      return
-    }
-    router.refresh()
-  }
-
-  const handleUpdate = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setIsProcessing(true)
-
-    const supabase = createClient()
-    const { error } = await supabase.from("pagos").update({
-      numero_reserva: referencia,
-      monto: Number(monto),
-      metodo_pago: metodo,
-    }).eq("id", pago.id)
-
-    setIsProcessing(false)
-
-    if (error) {
-      alert("Error al actualizar: " + error.message)
-      return
-    }
-
-    alert("¡Pago actualizado correctamente!")
-    setIsEditOpen(false)
-    router.refresh()
-  }
-
-  return (
-    <>
-      <div className="flex items-center gap-2">
-        <button onClick={() => setIsEditOpen(true)} className="inline-flex size-8 items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-amber-50 hover:text-amber-600" title="Editar pago">
-          <HugeiconsIcon icon={Edit01Icon} strokeWidth={1.5} className="size-4" />
-        </button>
-        <button onClick={handleDelete} className="inline-flex size-8 items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-red-50 hover:text-red-600" title="Eliminar pago">
-          <HugeiconsIcon icon={Delete01Icon} strokeWidth={1.5} className="size-4" />
-        </button>
-      </div>
-
-      {isEditOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-slate-950/45 backdrop-blur-sm" onClick={() => setIsEditOpen(false)} />
-          <div className="relative w-full max-w-md overflow-hidden rounded-3xl bg-white shadow-2xl">
-            <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4">
-              <h2 className="text-lg font-bold text-slate-900">Editar Pago</h2>
-              <button onClick={() => setIsEditOpen(false)} className="text-slate-400 hover:text-slate-700">
-                <HugeiconsIcon icon={Cancel01Icon} strokeWidth={2} />
-              </button>
-            </div>
-
-            <form onSubmit={handleUpdate} className="p-6 space-y-4 text-left">
-              <div>
-                <label className="mb-1 block text-sm font-medium text-slate-700">Vehículo / Reserva</label>
-                <select required value={referencia} onChange={(e) => setReferencia(e.target.value)} className="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 bg-white">
-                  <option value={pago.numero_reserva}>{pago.numero_reserva} (Actual)</option>
-                  {vehiculos.map((v) => (
-                    <option key={v.plate} value={v.plate}>{v.brand} {v.model} ({v.plate})</option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="mb-1 block text-sm font-medium text-slate-700">Monto (DOP)</label>
-                <input type="number" required min="1" value={monto} onChange={(e) => setMonto(e.target.value)} className="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20" />
-              </div>
-
-              <div>
-                <label className="mb-2 block text-sm font-medium text-slate-700">Método de Pago</label>
-                <div className="grid grid-cols-3 gap-2">
-                  {(["Tarjeta", "Efectivo", "Transferencia"] as PaymentMethod[]).map((m) => (
-                    <button key={m} type="button" onClick={() => setMetodo(m)} className={`flex flex-col items-center gap-2 rounded-xl border p-3 text-xs font-semibold transition-all ${metodo === m ? "border-amber-500 bg-amber-50 text-amber-700" : "border-slate-200 text-slate-600 hover:bg-slate-50"}`}>
-                      {m === "Tarjeta" && <HugeiconsIcon icon={CreditCardIcon} />}
-                      {m === "Efectivo" && <HugeiconsIcon icon={Wallet01Icon} />}
-                      {m === "Transferencia" && <HugeiconsIcon icon={BankIcon} />}
-                      {m}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="mt-6 flex gap-3">
-                <button type="button" onClick={() => setIsEditOpen(false)} className="flex-1 rounded-full border border-slate-200 py-3 font-semibold text-slate-700 hover:bg-slate-50">Cancelar</button>
-                <button type="submit" disabled={isProcessing} className="flex-1 rounded-full bg-slate-900 py-3 font-semibold text-white hover:bg-slate-800 disabled:opacity-50">
-                  {isProcessing ? "Guardando..." : "Guardar Cambios"}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-    </>
-  )
-}
+export type { PagoListItem };

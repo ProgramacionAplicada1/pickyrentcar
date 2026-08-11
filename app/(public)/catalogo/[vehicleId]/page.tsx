@@ -1,8 +1,6 @@
-import Link from "next/link"
 import { notFound } from "next/navigation"
 import { HugeiconsIcon } from "@hugeicons/react"
 import {
-  ArrowLeft01Icon,
   Calendar01Icon,
   Car01Icon,
   CheckmarkCircle02Icon,
@@ -13,7 +11,6 @@ import {
 } from "@hugeicons/core-free-icons"
 
 import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
 import {
   Card,
   CardContent,
@@ -21,14 +18,18 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
+import { BackButton } from "@/components/ui/back-button"
 import { ImageGalleryDialog } from "@/components/vehicles/image-gallery-dialog"
 import { ReservationForm } from "@/components/public/reservation-form"
+import { FavoriteButton } from "@/components/public/favorite-button"
 import { VehicleAvailabilityPicker } from "@/components/public/vehicle-availability-picker"
 import { formatCurrency } from "@/lib/utils/formatCurrency"
+import { getCurrentUser } from "@/services/auth"
 import {
   getPublicVehicleById,
   getVehicleReservedRanges,
 } from "@/services/catalog"
+import { getFavoriteVehicleIds } from "@/services/favorites"
 
 export const metadata = {
   title: "Detalle del vehículo · PickyRentCar",
@@ -49,28 +50,43 @@ export default async function CatalogoVehiclePage({
   const vehicle = await getPublicVehicleById(vehicleId)
   if (!vehicle) notFound()
 
-  const disabledRanges = await getVehicleReservedRanges(vehicleId)
+  const [disabledRanges, currentUser, favoriteIds] = await Promise.all([
+    getVehicleReservedRanges(vehicleId),
+    getCurrentUser(),
+    getFavoriteVehicleIds(),
+  ])
 
   const isUnavailable = vehicle.status === "maintenance"
   const cover = vehicle.image_urls[0] ?? null
+  const backParams = new URLSearchParams()
+  if (from) backParams.set("from", from)
+  if (to) backParams.set("to", to)
+  const backHref =
+    "/catalogo" + (backParams.size ? "?" + backParams.toString() : "")
 
   return (
     <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 py-8 sm:px-6 sm:py-10">
-      <Button
-        variant="ghost"
-        size="sm"
+      <BackButton
+        fallbackHref={backHref}
+        label="Volver al catálogo"
         className="w-fit rounded-full"
-        nativeButton={false}
-        render={<Link href="/catalogo" />}
-      >
-        <HugeiconsIcon icon={ArrowLeft01Icon} strokeWidth={1.75} />
-        Volver al catálogo
-      </Button>
+      />
 
       <div className="grid gap-6 lg:grid-cols-[1.4fr_1fr]">
         <div className="flex flex-col gap-6">
           <Card className="gap-0 overflow-hidden rounded-2xl p-0">
             <div className="relative aspect-[16/9] w-full overflow-hidden bg-muted">
+              {currentUser?.role !== "admin" && (
+                <div className="absolute top-4 right-4 z-10">
+                  <FavoriteButton
+                    vehicleId={vehicle.id}
+                    userId={currentUser?.role === "cliente" ? currentUser.id : null}
+                    initialFavorite={favoriteIds.includes(vehicle.id)}
+                    label
+                  />
+                </div>
+              )}
+
               {cover ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
@@ -220,6 +236,14 @@ export default async function CatalogoVehiclePage({
                 dailyPrice={Number(vehicle.daily_price)}
                 initialStartDate={from}
                 initialEndDate={to}
+                currentUser={
+                  currentUser
+                    ? {
+                        displayName: currentUser.displayName,
+                        email: currentUser.email,
+                      }
+                    : null
+                }
               />
             )}
           </Card>

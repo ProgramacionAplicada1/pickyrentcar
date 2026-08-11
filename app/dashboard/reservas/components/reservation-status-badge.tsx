@@ -1,59 +1,61 @@
 import { HugeiconsIcon } from "@hugeicons/react"
 import {
-  Cancel01Icon,
+  Calendar01Icon,
   CheckmarkCircle02Icon,
   Clock01Icon,
-  Time01Icon,
-  Wrench01Icon,
+  Flag01Icon,
+  Cancel01Icon,
 } from "@hugeicons/core-free-icons"
 
 import { Badge } from "@/components/ui/badge"
 import {
-  RESERVATION_STATUSES,
   RESERVATION_STATUS_LABELS,
   type ReservationStatus,
 } from "@/lib/vehicles/reservation-status"
 
-const ICON_BY_STATUS: Record<
-  ReservationStatus,
-  React.ComponentProps<typeof HugeiconsIcon>["icon"]
-> = {
-  pendiente: Clock01Icon,
+type Props = {
+  status: ReservationStatus | string
+}
+
+const ICONS: Record<string, React.ComponentProps<typeof HugeiconsIcon>["icon"]> = {
+  pendiente: Calendar01Icon,
   confirmada: CheckmarkCircle02Icon,
-  activa: Time01Icon,
-  finalizada: CheckmarkCircle02Icon,
+  activa: Flag01Icon,
+  finalizada: Clock01Icon,
   cancelada: Cancel01Icon,
 }
 
-const VARIANT_BY_STATUS: Record<
-  ReservationStatus,
-  React.ComponentProps<typeof Badge>["variant"]
+const VARIANTS: Record<
+  string,
+  "default" | "secondary" | "destructive" | "outline"
 > = {
-  pendiente: "secondary",
+  pendiente: "outline",
   confirmada: "default",
   activa: "default",
-  finalizada: "outline",
+  finalizada: "secondary", 
   cancelada: "destructive",
 }
 
-export function ReservationStatusBadge({
-  status,
-}: {
-  status: ReservationStatus | string
-}) {
-  const safeStatus: ReservationStatus = (
-    RESERVATION_STATUSES as readonly string[]
-  ).includes(status)
+export function ReservationStatusBadge({ status }: Props) {
+  const isKnown =
+    status === "pendiente" ||
+    status === "confirmada" ||
+    status === "activa" ||
+    status === "finalizada" ||
+    status === "cancelada"
+
+  const safeStatus: ReservationStatus = isKnown
     ? (status as ReservationStatus)
     : "pendiente"
 
-  const Icon = ICON_BY_STATUS[safeStatus]
+  const icon = ICONS[safeStatus] ?? Calendar01Icon
+  const variant = VARIANTS[safeStatus] ?? "outline"
+  const label = RESERVATION_STATUS_LABELS[safeStatus] ?? status
+
   return (
-    <Badge variant={VARIANT_BY_STATUS[safeStatus]} className="gap-1.5">
-      <HugeiconsIcon icon={Icon} strokeWidth={2} className="size-3.5" />
-      {RESERVATION_STATUS_LABELS[safeStatus]}
+    <Badge variant={variant} className="gap-1.5">
+      <HugeiconsIcon icon={icon} strokeWidth={1.75} className="size-3.5" />
+      {label}
     </Badge>
   )
 }
-
-void Wrench01Icon

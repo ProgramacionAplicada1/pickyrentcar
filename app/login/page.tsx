@@ -1,42 +1,50 @@
 import type { Metadata } from "next"
 import Image from "next/image"
-import Link from "next/link"
 import { redirect } from "next/navigation"
-import { HugeiconsIcon } from "@hugeicons/react"
-import { ArrowLeft01Icon } from "@hugeicons/core-free-icons"
 
 import { Card, CardContent } from "@/components/ui/card"
 import { LoginForm } from "@/components/login-form"
-import { createClient } from "@/lib/supabase/server"
+import { BackButton } from "@/components/ui/back-button"
+import { getCurrentUser } from "@/services/auth"
 
 export const metadata: Metadata = {
   title: "Iniciar sesión · PickyRentCar",
-  description: "Accede al panel de administración de PickyRentCar.",
+  description: "Inicia sesión en tu cuenta de PickyRentCar.",
 }
 
-export default async function LoginPage() {
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+type Props = {
+  searchParams: Promise<{ next?: string }>
+}
+
+function safeClientRedirect(value?: string) {
+  if (!value || !value.startsWith("/") || value.startsWith("//")) {
+    return "/catalogo"
+  }
+
+  if (value.startsWith("/dashboard")) {
+    return "/catalogo"
+  }
+
+  return value
+}
+
+export default async function LoginPage({ searchParams }: Props) {
+  const { next } = await searchParams
+  const redirectTo = safeClientRedirect(next)
+  const user = await getCurrentUser()
 
   if (user) {
-    redirect("/dashboard")
+    redirect(user.role === "admin" ? "/dashboard" : redirectTo)
   }
 
   return (
     <div className="flex min-h-full flex-1 flex-col items-center justify-center bg-zinc-50 px-4 py-6 sm:py-8">
-      <Link
-        href="/landing-page"
-        className="absolute top-4 left-4 z-10 inline-flex items-center gap-1.5 rounded-full bg-card/80 px-3 py-1.5 text-sm font-medium text-muted-foreground shadow-sm backdrop-blur transition-colors hover:bg-card hover:text-foreground"
-      >
-        <HugeiconsIcon
-          icon={ArrowLeft01Icon}
-          strokeWidth={1.75}
-          className="size-4"
-        />
-        Volver al inicio
-      </Link>
+      <BackButton
+        fallbackHref="/"
+        label="Volver al inicio"
+        size="sm"
+        className="absolute top-4 left-4 z-10 rounded-full bg-card/80 px-3 py-1.5 font-medium text-muted-foreground shadow-sm backdrop-blur transition-colors hover:bg-card hover:text-foreground"
+      />
 
       <div className="flex w-full max-w-md flex-col gap-4">
         <header className="flex flex-col items-center gap-3 text-center">
@@ -55,7 +63,7 @@ export default async function LoginPage() {
           </div>
 
           <p className="max-w-sm text-[13px] leading-snug text-muted-foreground">
-            Inicia sesión para acceder al panel de administración.
+            Inicia sesión para gestionar tu cuenta y tus reservas.
           </p>
         </header>
 
@@ -71,7 +79,7 @@ export default async function LoginPage() {
           </CardContent>
 
           <CardContent className="p-0">
-            <LoginForm />
+            <LoginForm redirectTo={redirectTo} />
           </CardContent>
         </Card>
       </div>

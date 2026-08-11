@@ -1,8 +1,3 @@
-import Link from "next/link"
-import { HugeiconsIcon } from "@hugeicons/react"
-import { ArrowLeft01Icon } from "@hugeicons/core-free-icons"
-
-import { Button } from "@/components/ui/button"
 import {
   Card,
   CardContent,
@@ -10,6 +5,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
+import { BackButton } from "@/components/ui/back-button"
 import { VehicleForm } from "@/components/vehicles/vehicle-form"
 
 export const metadata = {
@@ -20,16 +16,11 @@ export default function NewVehiclePage() {
   return (
     <div className="flex flex-1 flex-col gap-6 p-6">
       <div className="flex items-center gap-2">
-        <Button
-          variant="ghost"
-          size="sm"
+        <BackButton
+          fallbackHref="/dashboard/vehicles"
+          label="Volver"
           className="rounded-full"
-          nativeButton={false}
-          render={<Link href="/dashboard/vehicles" />}
-        >
-          <HugeiconsIcon icon={ArrowLeft01Icon} strokeWidth={1.75} />
-          Volver
-        </Button>
+        />
       </div>
 
       <div className="mx-auto w-full max-w-2xl">

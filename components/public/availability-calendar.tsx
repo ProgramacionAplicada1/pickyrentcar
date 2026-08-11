@@ -13,37 +13,57 @@ type Props = {
   minDate?: Date
 }
 
+function parseLocalDate(value: string): Date {
+  const [y, m, d] = value.split("-").map(Number)
+  return new Date(y, (m ?? 1) - 1, d ?? 1)
+}
+
 export function AvailabilityCalendar({
   disabledRanges,
   selected,
   onSelect,
   minDate,
 }: Props) {
-  const disabled = React.useMemo(() => {
-    const ranges = disabledRanges
+  const reservedRanges = React.useMemo(() => {
+    return disabledRanges
       .map((r) => {
-        const f = new Date(r.from)
-        const t = new Date(r.to)
+        const f = parseLocalDate(r.from)
+        const t = parseLocalDate(r.to)
         if (Number.isNaN(f.getTime()) || Number.isNaN(t.getTime())) return null
         return { from: f, to: t }
       })
       .filter((r): r is { from: Date; to: Date } => Boolean(r))
-    const today = new Date()
-    today.setHours(0, 0, 0, 0)
-    const past: DateRangeType = { from: new Date(1900, 0, 1), to: today }
-    return [past, ...ranges]
   }, [disabledRanges])
 
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const pastRange: DateRangeType = {
+    from: new Date(1900, 0, 1),
+    to: new Date(today.getTime() - 86400000),
+  }
+
+  const disabled = [pastRange, ...reservedRanges]
+
   return (
-    <Calendar
-      mode="range"
-      numberOfMonths={2}
-      locale={es}
-      selected={selected}
-      onSelect={onSelect}
-      disabled={disabled}
-      defaultMonth={minDate ?? new Date()}
-      className="rounded-2xl border bg-card"
-    />
+    <div className="flex justify-center">
+      <Calendar
+        mode="range"
+        numberOfMonths={1}
+        locale={es}
+        selected={selected}
+        onSelect={onSelect}
+        disabled={disabled}
+        modifiers={{
+          reserved: reservedRanges,
+          past: pastRange,
+        }}
+        modifiersClassNames={{
+          reserved: "bg-red-100 text-red-700 hover:bg-red-100 line-through",
+          past: "text-muted-foreground/40",
+        }}
+        defaultMonth={minDate ?? new Date()}
+        className="rounded-2xl border bg-card"
+      />
+    </div>
   )
 }

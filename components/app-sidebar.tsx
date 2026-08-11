@@ -74,32 +74,46 @@ type SidebarUser = {
 }
 
 export function AppSidebar() {
-  const { isOpen } = useSidebarToggle()
+  const { isOpen, mobileOpen, closeMobile  } = useSidebarToggle()
   const pathname = usePathname()
   const [user, setUser] = React.useState<SidebarUser | null>(null)
 
   React.useEffect(() => {
     const supabase = createClient()
     let active = true
-    supabase.auth
-      .getUser()
-      .then(({ data }) => {
-        if (!active || !data.user) return
-        const meta =
-          (data.user.user_metadata as Record<string, string | undefined>) ?? {}
-        const name =
-          meta.full_name ??
-          meta.name ??
-          meta.nombre ??
-          data.user.email?.split("@")[0] ??
-          "Usuario"
-        setUser({ name, email: data.user.email ?? "" })
-      })
-      .catch(() => {
-        /* ignore silently in sidebar */
-      })
+
+    
+    const fetchUser = async () => {
+      const { data } = await supabase.auth.getUser()
+      if (!active || !data.user) return
+
+      const meta = (data.user.user_metadata as Record<string, string | undefined>) ?? {}
+      
+      
+      const name =
+        meta.display_name ??
+        meta.full_name ??
+        meta.name ??
+        meta.nombre ??
+        data.user.email?.split("@")[0] ??
+        "Usuario"
+        
+      setUser({ name, email: data.user.email ?? "" })
+    }
+
+    
+    fetchUser()
+
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'USER_UPDATED') {
+        fetchUser()
+      }
+    })
+
     return () => {
       active = false
+      subscription.unsubscribe()
     }
   }, [])
 
@@ -114,12 +128,22 @@ export function AppSidebar() {
     : "..."
 
   return (
-    <aside
-      className={cn(
-        "shrink-0 overflow-hidden border-r border-slate-800 bg-gradient-to-b from-slate-900 via-slate-950 to-black text-white transition-[width] duration-200 ease-linear",
-        isOpen ? "w-[18rem]" : "w-0",
+    <>
+      {mobileOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm md:hidden"
+          onClick={closeMobile}
+        />
       )}
-    >
+
+      <aside
+        className={cn(
+          "fixed inset-y-0 left-0 z-50 w-[18rem] shrink-0 overflow-hidden border-r border-slate-800 bg-gradient-to-b from-slate-900 via-slate-950 to-black text-white transition-transform duration-300 ease-in-out",
+          mobileOpen ? "translate-x-0" : "-translate-x-full",
+          "md:static md:translate-x-0 md:transition-[width] md:duration-200 md:ease-linear",
+          isOpen ? "md:w-[18rem]" : "md:w-0",
+        )}
+      >
       <div className="flex h-screen w-[18rem] flex-col">
         {/* Logo */}
         <div className="border-b border-slate-800 px-8 py-7">
@@ -159,7 +183,7 @@ export function AppSidebar() {
                 href={item.href}
                 className={`group flex items-center justify-between rounded-xl px-4 py-3 transition-all duration-300 ${
                   isActive
-                    ? "bg-blue-600 text-white shadow-lg shadow-blue-600/30"
+                    ? "bg-sky-600 text-white shadow-lg shadow-sky-600/25"
                     : "text-slate-300 hover:bg-slate-800 hover:text-white"
                 }`}
               >
@@ -170,7 +194,7 @@ export function AppSidebar() {
                     className={`text-lg transition-colors ${
                       isActive
                         ? "text-white"
-                        : "text-slate-400 group-hover:text-blue-400"
+                        : "text-slate-400 group-hover:text-sky-400"
                     }`}
                   />
                   <span className="font-medium">{item.name}</span>
@@ -198,7 +222,7 @@ export function AppSidebar() {
         <div className="border-t border-slate-800 p-3">
           <div className="flex items-center justify-between rounded-xl border border-transparent bg-slate-900/50 p-2 transition-all duration-300 hover:border-slate-700 hover:bg-slate-800">
             <div className="flex min-w-0 items-center gap-3 overflow-hidden">
-              <div className="relative flex size-11 shrink-0 items-center justify-center rounded-full bg-gradient-to-r from-blue-500 to-cyan-500 font-bold text-sm text-white shadow-md">
+              <div className="relative flex size-11 shrink-0 items-center justify-center rounded-full bg-gradient-to-r from-sky-500 to-cyan-400 font-bold text-sm text-white shadow-md">
                 {initials}
                 {user && (
                   <span className="absolute right-0 bottom-0 size-3 rounded-full border-2 border-slate-900 bg-green-500" />
@@ -211,7 +235,7 @@ export function AppSidebar() {
                 <p className="mt-0.5 truncate text-[11px] text-slate-400">
                   {user?.email ?? ""}
                 </p>
-                <p className="mt-1 truncate text-[11px] font-bold tracking-wider text-blue-400 uppercase">
+                <p className="mt-1 truncate text-[11px] font-bold tracking-wider text-sky-400 uppercase">
                   Administrador
                 </p>
               </div>
@@ -221,5 +245,6 @@ export function AppSidebar() {
         </div>
       </div>
     </aside>
+    </>
   )
 }

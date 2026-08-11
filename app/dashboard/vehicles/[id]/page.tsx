@@ -1,8 +1,7 @@
-import Link from "next/link"
 import { notFound } from "next/navigation"
+import Link from "next/link"
 import { HugeiconsIcon } from "@hugeicons/react"
 import {
-  ArrowLeft01Icon,
   Car01Icon,
   ColorPickerIcon,
   Dollar01Icon,
@@ -23,6 +22,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
+import { BackButton } from "@/components/ui/back-button"
 import { StatusBadge } from "@/components/vehicles/status-badge"
 import { DeleteVehicleButton } from "@/components/vehicles/vehicle-actions"
 import { ImageGalleryDialog } from "@/components/vehicles/image-gallery-dialog"
@@ -57,16 +57,11 @@ export default async function VehicleDetailPage({ params }: Props) {
 
   return (
     <div className="flex flex-1 flex-col gap-6 p-6">
-      <Button
-        variant="ghost"
-        size="sm"
+      <BackButton
+        fallbackHref="/dashboard/vehicles"
+        label="Volver a vehículos"
         className="w-fit rounded-full"
-        nativeButton={false}
-        render={<Link href="/dashboard/vehicles" />}
-      >
-        <HugeiconsIcon icon={ArrowLeft01Icon} strokeWidth={1.75} />
-        Volver a vehículos
-      </Button>
+      />
 
       <div className="mx-auto flex w-full max-w-3xl flex-col gap-4">
         <Card className="gap-0 overflow-hidden rounded-2xl p-0">

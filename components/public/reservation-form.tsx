@@ -17,6 +17,7 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Spinner } from "@/components/ui/spinner"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { cn } from "@/lib/utils"
 import { formatCurrency } from "@/lib/utils/formatCurrency"
 
 import {
@@ -24,12 +25,18 @@ import {
   type PublicReservationResult,
 } from "@/app/(public)/catalogo/[vehicleId]/reservar/actions"
 
+type CurrentUser = {
+  displayName: string
+  email: string
+} | null
+
 type Props = {
   vehicleId: string
   vehicleLabel: string
   dailyPrice: number
   initialStartDate: string
   initialEndDate: string
+  currentUser?: CurrentUser
 }
 
 export function ReservationForm({
@@ -38,6 +45,7 @@ export function ReservationForm({
   dailyPrice,
   initialStartDate,
   initialEndDate,
+  currentUser = null,
 }: Props) {
   const startDate = parseLocalDate(initialStartDate)
   const endDate = parseLocalDate(initialEndDate)
@@ -47,7 +55,8 @@ export function ReservationForm({
     const diff = Math.round(
       (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24),
     )
-    return diff >= 0 ? diff + 1 : 0
+   
+    return diff > 0 ? diff : 0
   }, [startDate, endDate])
 
   const total = days * Number(dailyPrice)
@@ -91,9 +100,15 @@ export function ReservationForm({
               autoComplete="name"
               required
               placeholder="Juan Pérez"
+              readOnly={!!currentUser}
               disabled={isPending}
+              defaultValue={currentUser?.displayName ?? ""}
               aria-invalid={!!fieldErrors?.client_name}
-              className="pl-10"
+              className={cn(
+                "pl-10",
+                currentUser &&
+                  "read-only:bg-muted read-only:text-muted-foreground read-only:cursor-not-allowed",
+              )}
             />
           </div>
           {fieldErrors?.client_name && (
@@ -116,9 +131,15 @@ export function ReservationForm({
               autoComplete="email"
               required
               placeholder="tu@correo.com"
+              readOnly={!!currentUser}
               disabled={isPending}
+              defaultValue={currentUser?.email ?? ""}
               aria-invalid={!!fieldErrors?.client_email}
-              className="pl-10"
+              className={cn(
+                "pl-10",
+                currentUser &&
+                  "read-only:bg-muted read-only:text-muted-foreground read-only:cursor-not-allowed",
+              )}
             />
           </div>
           {fieldErrors?.client_email && (

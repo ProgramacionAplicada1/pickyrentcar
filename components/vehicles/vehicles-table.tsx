@@ -40,7 +40,7 @@ type Props = {
 
 export function VehiclesTable({ vehicles }: Props) {
   return (
-    <div className="overflow-hidden rounded-2xl border bg-card">
+    <div className="overflow-x-auto rounded-2xl border bg-card">
       <Table>
         <TableHeader>
           <TableRow>

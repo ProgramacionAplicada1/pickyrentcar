@@ -1,3 +1,5 @@
+import { cache } from "react"
+
 import { createClient } from "@/lib/supabase/server"
 
 export type AuthRole = "admin" | "cliente"
@@ -9,7 +11,7 @@ export type AuthUser = {
   displayName: string
 }
 
-export async function getCurrentUser(): Promise<AuthUser | null> {
+export const getCurrentUser = cache(async function getCurrentUser(): Promise<AuthUser | null> {
   const supabase = await createClient()
   const {
     data: { user },
@@ -23,10 +25,13 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
     .maybeSingle()
 
   const meta = (user.user_metadata as Record<string, string | undefined>) ?? {}
-  const role: AuthRole =
-    (profile as { role?: string } | null)?.role === "cliente"
-      ? "cliente"
-      : "admin"
+const profileRole = (profile as { role?: string } | null)?.role;
+if (profileRole !== "admin" && profileRole !== "cliente") {
+  return null;
+}
+const role: AuthRole = profileRole;
+  
+  
   const displayName =
     (profile as { full_name?: string } | null)?.full_name ??
     meta.full_name ??
@@ -41,4 +46,4 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
     role,
     displayName,
   }
-}
+})

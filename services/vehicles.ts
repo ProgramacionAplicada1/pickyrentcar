@@ -74,29 +74,6 @@ function extractStoragePath(publicUrl: string): string | null {
   }
 }
 
-async function uploadToSlot(
-  file: File,
-  userId: string,
-  slot: number,
-): Promise<string | null> {
-  if (!file || file.size === 0) return null
-  const supabase = await createClient()
-  const ext = (file.name.split(".").pop() || "jpg").toLowerCase()
-  const safeExt = /^[a-z0-9]+$/.test(ext) ? ext : "jpg"
-  const path = `${userId}/slot${slot}-${Date.now()}-${Math.random()
-    .toString(36)
-    .slice(2, 8)}.${safeExt}`
-
-  const { error } = await supabase.storage
-    .from("vehicles")
-    .upload(path, file, { contentType: file.type, upsert: false })
-
-  if (error) return null
-
-  const { data } = supabase.storage.from("vehicles").getPublicUrl(path)
-  return data.publicUrl
-}
-
 function readImageSlots(formData: FormData): {
   files: (File | null)[]
   existing: string[]
@@ -114,31 +91,17 @@ function readImageSlots(formData: FormData): {
   return { files, existing }
 }
 
-async function buildFinalImageUrls(
+function collectFinalImageUrls(
   files: (File | null)[],
   existing: string[],
-  userId: string,
-): Promise<{ urls: string[]; removed: string[]; storageError: boolean }> {
+): { urls: string[]; removed: string[] } {
   const urls: string[] = []
-  let storageError = false
-
   for (let slot = 0; slot < files.length; slot++) {
-    const file = files[slot]
-    if (file) {
-      const uploaded = await uploadToSlot(file, userId, slot + 1)
-      if (!uploaded) {
-        storageError = true
-        if (existing[slot]) urls.push(existing[slot])
-      } else {
-        urls.push(uploaded)
-      }
-    } else if (existing[slot]) {
-      urls.push(existing[slot])
-    }
+    if (files[slot]) continue
+    if (existing[slot]) urls.push(existing[slot])
   }
-
   const removed = existing.filter((url) => !urls.includes(url))
-  return { urls, removed, storageError }
+  return { urls, removed }
 }
 
 async function removeStoragePaths(urls: string[]) {
@@ -165,11 +128,17 @@ function normalizeImageUrls(row: {
 
 export async function listVehicles(): Promise<VehicleRow[]> {
   const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) return []
+
   const { data } = await supabase
     .from("vehicles")
     .select(
       "id, nombre, plate, brand, model, year, color, seats, status, transmission, fuel_type, category, daily_price, notes, image_urls, created_at",
     )
+    .eq("created_by", user.id)
     .order("created_at", { ascending: false })
 
   return (data ?? []).map((row) => ({
@@ -182,12 +151,18 @@ export async function getVehicleById(
   id: string,
 ): Promise<VehicleFull | null> {
   const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) return null
+
   const { data } = await supabase
     .from("vehicles")
     .select(
       "id, nombre, plate, brand, model, year, color, seats, status, transmission, fuel_type, category, daily_price, notes, image_urls, created_at, updated_at",
     )
     .eq("id", id)
+    .eq("created_by", user.id)
     .maybeSingle()
 
   if (!data) return null
@@ -199,21 +174,32 @@ export async function getVehicleById(
 
 export async function getVehicleStats(): Promise<VehicleStats> {
   const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) {
+    return { total: 0, available: 0, inUse: 0, maintenance: 0 }
+  }
+
   const [total, available, inUse, maintenance] = await Promise.all([
     supabase
       .from("vehicles")
-      .select("*", { count: "exact", head: true }),
+      .select("*", { count: "exact", head: true })
+      .eq("created_by", user.id),
     supabase
       .from("vehicles")
       .select("*", { count: "exact", head: true })
+      .eq("created_by", user.id)
       .eq("status", "available"),
     supabase
       .from("vehicles")
       .select("*", { count: "exact", head: true })
+      .eq("created_by", user.id)
       .eq("status", "in_use"),
     supabase
       .from("vehicles")
       .select("*", { count: "exact", head: true })
+      .eq("created_by", user.id)
       .eq("status", "maintenance"),
   ])
 
@@ -228,6 +214,29 @@ export async function getVehicleStats(): Promise<VehicleStats> {
 // ============================================================================
 // Mutations
 // ============================================================================
+
+export async function getMostRentedVehicles() {
+  const vehicles = await listVehicles();
+  const supabase = await createClient();
+
+  const result = [];
+
+  for (const vehicle of vehicles) {
+    const { count } = await supabase
+      .from("reservations")
+      .select("*", { count: "exact", head: true })
+      .eq("vehicle_id", vehicle.id);
+
+    result.push({
+      nombre: vehicle.nombre ?? `${vehicle.brand} ${vehicle.model}`,
+      reservas: count ?? 0,
+    });
+  }
+
+  return result.sort((a, b) => b.reservas - a.reservas).slice(0, 5);
+}
+
+
 
 export async function createVehicle(
   _prev: VehicleActionResult | undefined,
@@ -251,19 +260,17 @@ export async function createVehicle(
   }
 
   const { files, existing } = readImageSlots(formData)
-  const { urls: imageUrls, storageError } = await buildFinalImageUrls(
-    files,
-    existing,
-    user.id,
-  )
 
-  if (storageError) {
+  if (files.some((f) => f !== null)) {
     return {
       ok: false,
-      error: "No se pudieron subir algunas imágenes. Inténtalo de nuevo.",
-      fieldErrors: { images: "Error al subir al menos una imagen." },
+      error:
+        "Las imágenes deben subirse desde el formulario antes de enviar. Recarga la página e inténtalo de nuevo.",
+      fieldErrors: { images: "Subida pendiente. Recarga e inténtalo de nuevo." },
     }
   }
+
+  const { urls: imageUrls } = collectFinalImageUrls(files, existing)
 
   const { error } = await supabase.from("vehicles").insert({
     created_by: user.id,
@@ -338,19 +345,19 @@ export async function updateVehicle(
 
   const { files, existing: formExisting } = readImageSlots(formData)
 
-  const { urls: imageUrls, storageError, removed } = await buildFinalImageUrls(
-    files,
-    formExisting,
-    user.id,
-  )
-
-  if (storageError) {
+  if (files.some((f) => f !== null)) {
     return {
       ok: false,
-      error: "No se pudieron subir algunas imágenes. Inténtalo de nuevo.",
-      fieldErrors: { images: "Error al subir al menos una imagen." },
+      error:
+        "Las imágenes deben subirse desde el formulario antes de enviar. Recarga la página e inténtalo de nuevo.",
+      fieldErrors: { images: "Subida pendiente. Recarga e inténtalo de nuevo." },
     }
   }
+
+  const { urls: imageUrls, removed } = collectFinalImageUrls(
+    files,
+    formExisting,
+  )
 
   const { error } = await supabase
     .from("vehicles")
