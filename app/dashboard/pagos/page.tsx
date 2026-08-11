@@ -1,29 +1,31 @@
-import { HugeiconsIcon } from "@hugeicons/react"
-import { MoneyBag01Icon } from "@hugeicons/core-free-icons"
+import { HugeiconsIcon } from "@hugeicons/react";
+import { MoneyBag01Icon } from "@hugeicons/core-free-icons";
 
+import { PaymentRowActions, type PagoListItem } from "./payment-modal";
+import { formatCurrency } from "@/lib/utils/formatCurrency";
 import {
-  PaymentAction,
-  PaymentRowActions,
-  type PagoListItem,
-} from "./payment-modal"
-import { formatCurrency } from "@/lib/utils/formatCurrency"
-import { listPagos, type PagoEstado, type PagoMetodo } from "@/services/payments"
+  listPagos,
+  type PagoEstado,
+  type PagoMetodo,
+} from "@/services/payments";
 
 const ESTADO_BADGE: Record<PagoEstado, string> = {
   pendiente: "border border-amber-200 bg-amber-50 text-amber-700",
   completado: "border border-emerald-200 bg-emerald-50 text-emerald-700",
   fallido: "border border-red-200 bg-red-50 text-red-700",
   reembolsado: "border border-slate-200 bg-slate-50 text-slate-700",
-}
+};
 
 const ESTADO_LABEL: Record<PagoEstado, string> = {
   pendiente: "Pendiente",
   completado: "Completado",
   fallido: "Fallido",
   reembolsado: "Reembolsado",
-}
+};
 
-function adaptToListItem(row: Awaited<ReturnType<typeof listPagos>>[number]): PagoListItem {
+function adaptToListItem(
+  row: Awaited<ReturnType<typeof listPagos>>[number],
+): PagoListItem {
   return {
     id: row.id,
     reservation_id: row.reservation_id,
@@ -33,12 +35,14 @@ function adaptToListItem(row: Awaited<ReturnType<typeof listPagos>>[number]): Pa
     numero: row.reservation?.numero ?? null,
     client_name: row.reservation?.client_name ?? null,
     vehicle_label: null,
-  }
+  };
 }
 
 export default async function PagosPage() {
-  const pagos = await listPagos()
-  const hasPagos = pagos.length > 0
+  const pagos = (await listPagos()).filter(
+    (pago) => pago.estado === "pendiente",
+  );
+  const hasPagos = pagos.length > 0;
 
   return (
     <div className="flex flex-1 flex-col gap-6 p-6">
@@ -48,12 +52,10 @@ export default async function PagosPage() {
             Historial de Pagos
           </h1>
           <p className="text-sm text-muted-foreground">
-            Administra y registra los pagos de las reservas. Al registrar un
-            pago completado, la reserva pasa automáticamente a Confirmada.
+            Revisa los pagos pendientes y confirma los pagos realizados por los
+            clientes
           </p>
         </div>
-
-        <PaymentAction />
       </div>
 
       {!hasPagos ? (
@@ -68,9 +70,10 @@ export default async function PagosPage() {
           <h3 className="text-lg font-semibold text-slate-900">
             No hay pagos registrados
           </h3>
+
           <p className="mt-2 max-w-sm text-sm text-slate-500">
-            Haz clic en "Registrar Pago" para procesar una nueva transacción en
-            el sistema.
+            Los pagos realizados por los clientes aparecerán aquí para su
+            verificación.
           </p>
         </div>
       ) : (
@@ -89,7 +92,7 @@ export default async function PagosPage() {
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {pagos.map((pago) => {
-                  const item = adaptToListItem(pago)
+                  const item = adaptToListItem(pago);
                   return (
                     <tr
                       key={pago.id}
@@ -99,7 +102,9 @@ export default async function PagosPage() {
                         <div className="flex flex-col">
                           <span className="font-mono text-xs tracking-wider text-muted-foreground">
                             {item.numero ?? "—"}
-                          </span>
+                         
+                         
+                         </span>
                           <span>{item.client_name ?? "—"}</span>
                         </div>
                       </td>
@@ -127,7 +132,7 @@ export default async function PagosPage() {
                         <PaymentRowActions pago={item} />
                       </td>
                     </tr>
-                  )
+                  );
                 })}
               </tbody>
             </table>
@@ -135,5 +140,5 @@ export default async function PagosPage() {
         </div>
       )}
     </div>
-  )
+  );
 }

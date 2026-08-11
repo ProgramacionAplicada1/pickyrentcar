@@ -16,7 +16,7 @@ export const PAGO_ESTADOS = [
 
 export type PagoEstado = (typeof PAGO_ESTADOS)[number]
 
-export const PAGO_METODOS = ["Tarjeta", "Efectivo", "Transferencia"] as const
+export const PAGO_METODOS = ["Efectivo", "Transferencia"] as const
 export type PagoMetodo = (typeof PAGO_METODOS)[number]
 
 export type PagoRow = {
@@ -177,7 +177,7 @@ export async function createPago(
     return { ok: false, error: "Método de pago inválido." }
   }
 
-  const estado: PagoEstado = input.estado ?? "completado"
+  const estado: PagoEstado = input.estado ?? "pendiente";
 
   const { data, error } = await supabase
     .from("pagos")
@@ -194,40 +194,22 @@ export async function createPago(
       "id, reservation_id, monto, metodo_pago, estado, referencia, notas, created_by, created_at, updated_at",
     )
     .single()
+  
+  console.log("RESULTADO INSERT PAGO:", {
+    data,
+    error,
+  });
 
-  if (error || !data) {
-    return {
-      ok: false,
-      error: "No se pudo registrar el pago. Inténtalo de nuevo.",
-    }
-  }
+if (error || !data) {
+  console.error("ERROR REAL DE SUPABASE AL CREAR PAGO:", error);
+  console.error("DATA DEL INSERT:", data);
 
-  // Auto-promoción: si el pago está completado, avanzar la reserva un paso
-  // en la cadena. Cubre `pendiente → confirmada` y `confirmada → activa`.
-  // No auto-avanzamos más allá de `activa` (`finalizada` representa devolución
-  // del vehículo, evento distinto al pago).
-  if (estado === "completado") {
-    const { data: reservationRow } = await supabase
-      .from("reservations")
-      .select("status")
-      .eq("id", input.reservation_id)
-      .maybeSingle()
-
-    if (
-      reservationRow &&
-      (reservationRow.status === "pendiente" ||
-        reservationRow.status === "confirmada")
-    ) {
-      const next = nextReservationStatus(reservationRow.status)
-      if (next) {
-        await supabase
-          .from("reservations")
-          .update({ status: next })
-          .eq("id", input.reservation_id)
-      }
-    }
-  }
-
+  return {
+    ok: false,
+    error: error?.message ?? "El pago no pudo ser creado.",
+  };
+}
+ 
   revalidatePath("/dashboard/reservas")
   revalidatePath("/dashboard/pagos")
 

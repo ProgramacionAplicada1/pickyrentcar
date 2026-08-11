@@ -5,7 +5,7 @@ export type TipoCliente = "registrado" | "invitado";
 type ClienteAcumulador = CLIENTE & {
   reservationStatuses: string[];
 };
-
+ 
 export type EstadoCliente = "pendiente_pago" | "activo" | "finalizado";
 
 export type CLIENTE = {
@@ -20,7 +20,7 @@ export type CLIENTE = {
   ultimaReserva: string;
 };
 
-export async function getClientsByOwner() {
+export async function getClientsByOwner() { 
   const supabase = await createClient();
   const {
     data: { user },
