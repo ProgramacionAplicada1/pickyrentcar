@@ -32,7 +32,7 @@ const VARIANTS: Record<
   pendiente: "outline",
   confirmada: "default",
   activa: "default",
-  finalizada: "secondary",
+  finalizada: "secondary", 
   cancelada: "destructive",
 }
 

@@ -34,7 +34,7 @@ const VARIANTS: Record<
   activa: "default",
   finalizada: "secondary",
   cancelada: "destructive",
-}
+} 
 
 export function ReservationStatusBadge({ status }: Props) {
   const isKnown =

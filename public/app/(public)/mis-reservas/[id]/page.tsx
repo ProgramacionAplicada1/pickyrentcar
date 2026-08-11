@@ -5,7 +5,7 @@ import { notFound, redirect } from "next/navigation"
 import {
   FiArrowLeft,
   FiCalendar,
-  FiCar,
+  FiTruck,
   FiClock,
   FiHash,
   FiMail,
@@ -57,14 +57,14 @@ function formatCreatedAt(value: string) {
 const STATUS_COPY: Record<string, string> = {
   pendiente:
     "Recibimos tu solicitud. El equipo de PickyRentCar debe validar los próximos pasos antes de confirmarla.",
-  confirmada:
-    "Tu reserva está confirmada. Conserva este número de reserva para cualquier consulta.",
+  pendiente_pago:
+    "Tu reserva fue aceptada. Realiza el pago para activar tu reserva.",
   activa:
-    "Tu renta está activa actualmente. Si necesitas asistencia, contacta al equipo de PickyRentCar.",
+    "Tu renta esta activa actualmente. Si necesitas asistencia, contacta al equipo de PickyRentCar.",
   finalizada:
     "Esta renta ya fue finalizada y permanece disponible en tu historial.",
   cancelada: "Esta reserva fue cancelada y ya no está activa.",
-}
+};
 
 export default async function MyReservationDetailPage({ params }: Props) {
   const user = await getCurrentUser()
@@ -133,7 +133,7 @@ export default async function MyReservationDetailPage({ params }: Props) {
                   />
                 ) : (
                   <div className="absolute inset-0 flex items-center justify-center text-muted-foreground/60">
-                    <FiCar className="size-12" />
+                    <FiTruck className="size-12" />
                   </div>
                 )}
               </div>

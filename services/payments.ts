@@ -1,7 +1,6 @@
 import { revalidatePath } from "next/cache"
 
 import { createClient } from "@/lib/supabase/server"
-import { nextReservationStatus } from "@/lib/vehicles/reservation-status"
 
 // ============================================================================
 // Types
@@ -16,7 +15,7 @@ export const PAGO_ESTADOS = [
 
 export type PagoEstado = (typeof PAGO_ESTADOS)[number]
 
-export const PAGO_METODOS = ["Tarjeta", "Efectivo", "Transferencia"] as const
+export const PAGO_METODOS = ["Efectivo", "Transferencia"] as const
 export type PagoMetodo = (typeof PAGO_METODOS)[number]
 
 export type PagoRow = {
@@ -59,19 +58,27 @@ export type PagoMutationResult =
 // ============================================================================
 
 export async function listPagos(): Promise<PagoRowWithReservation[]> {
-  const supabase = await createClient()
-  const { data } = await supabase
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
     .from("pagos")
     .select(
       "id, reservation_id, monto, metodo_pago, estado, referencia, notas, created_by, created_at, updated_at, reservations:reservation_id(numero, client_name, total_price, status)",
     )
-    .order("created_at", { ascending: false })
+    .order("created_at", { ascending: false });
+
+  console.log("========== LIST PAGOS ==========");
+  console.log("PAGOS ADMIN:", data);
+  console.log("ERROR LIST PAGOS:", error);
+  console.log("================================");
 
   return (data ?? []).map((row) => {
-    const rawReservation = (row as { reservations: unknown }).reservations
+    const rawReservation = (row as { reservations: unknown }).reservations;
+
     const reservation = Array.isArray(rawReservation)
       ? (rawReservation[0] as PagoRowWithReservation["reservation"] | undefined)
-      : (rawReservation as PagoRowWithReservation["reservation"] | null)
+      : (rawReservation as PagoRowWithReservation["reservation"] | null);
+
     return {
       id: String(row.id),
       reservation_id: String(row.reservation_id),
@@ -84,8 +91,8 @@ export async function listPagos(): Promise<PagoRowWithReservation[]> {
       created_at: String(row.created_at),
       updated_at: String(row.updated_at),
       reservation: reservation ?? null,
-    } satisfies PagoRowWithReservation
-  })
+    } satisfies PagoRowWithReservation;
+  });
 }
 
 export async function listPagosByReservation(
@@ -159,25 +166,89 @@ export async function reservationHasCompletedPayment(
 export async function createPago(
   input: CreatePagoInput,
 ): Promise<PagoMutationResult> {
-  const supabase = await createClient()
+  const supabase = await createClient();
+
+  const { data: debugAuth, error: debugError } =
+    await supabase.rpc("debug_auth_context");
+
+  console.log("DEBUG AUTH CONTEXT:", debugAuth);
+  console.log("DEBUG AUTH ERROR:", debugError);
+
+  console.log("SUPABASE URL:", process.env.NEXT_PUBLIC_SUPABASE_URL);
+
   const {
     data: { user },
-  } = await supabase.auth.getUser()
+  } = await supabase.auth.getUser();
+
+  console.log("USUARIO AUTENTICADO:", user?.id);
+
   if (!user) {
-    return { ok: false, error: "Tu sesión ha expirado. Inicia sesión de nuevo." }
+    return {
+      ok: false,
+      error: "Tu sesión ha expirado. Inicia sesión de nuevo.",
+    };
   }
 
   if (!input.reservation_id) {
-    return { ok: false, error: "Selecciona una reserva." }
-  }
-  if (!Number.isFinite(input.monto) || input.monto <= 0) {
-    return { ok: false, error: "El monto debe ser mayor que 0." }
-  }
-  if (!PAGO_METODOS.includes(input.metodo_pago)) {
-    return { ok: false, error: "Método de pago inválido." }
+    return {
+      ok: false,
+      error: "Selecciona una reserva.",
+    };
   }
 
-  const estado: PagoEstado = input.estado ?? "completado"
+  if (!Number.isFinite(input.monto) || input.monto <= 0) {
+    return {
+      ok: false,
+      error: "El monto debe ser mayor que 0.",
+    };
+  }
+
+  if (!PAGO_METODOS.includes(input.metodo_pago)) {
+    return {
+      ok: false,
+      error: "Método de pago inválido.",
+    };
+  }
+
+ //const estado: PagoEstado = "pendiente";
+ const estado: PagoEstado = input.estado ?? "pendiente";
+
+  // Verificamos que el usuario sea dueño de la reserva
+  const { data: ownsReservation, error: ownsError } = await supabase.rpc(
+    "user_owns_reservation",
+    {
+      p_reservation_id: input.reservation_id,
+    },
+  );
+
+  console.log("¿USUARIO ES DUEÑO DE LA RESERVA?:", ownsReservation);
+
+  console.log("ERROR DE user_owns_reservation:", ownsError);
+
+  if (ownsError) {
+    return {
+      ok: false,
+      error: "No se pudo verificar la reserva.",
+    };
+  }
+
+  if (!ownsReservation) {
+    return {
+      ok: false,
+      error: "No tienes permiso para registrar este pago.",
+    };
+  }
+
+  // ============================================================
+  // INSERT DE PRUEBA
+  // ============================================================
+
+  const { data: testSession } = await supabase.auth.getSession();
+
+  console.log("SESSION USER:", testSession.session?.user.id);
+
+  console.log("ACCESS TOKEN EXISTE:", !!testSession.session?.access_token);
+
 
   const { data, error } = await supabase
     .from("pagos")
@@ -193,43 +264,23 @@ export async function createPago(
     .select(
       "id, reservation_id, monto, metodo_pago, estado, referencia, notas, created_by, created_at, updated_at",
     )
-    .single()
+    .single();
 
   if (error || !data) {
+    console.error("ERROR REAL DE SUPABASE AL CREAR PAGO:", error);
+
+    console.error("DATA DEL INSERT:", data);
+
     return {
       ok: false,
-      error: "No se pudo registrar el pago. Inténtalo de nuevo.",
-    }
+      error: error?.message ?? "El pago no pudo ser creado.",
+    };
   }
 
-  // Auto-promoción: si el pago está completado, avanzar la reserva un paso
-  // en la cadena. Cubre `pendiente → confirmada` y `confirmada → activa`.
-  // No auto-avanzamos más allá de `activa` (`finalizada` representa devolución
-  // del vehículo, evento distinto al pago).
-  if (estado === "completado") {
-    const { data: reservationRow } = await supabase
-      .from("reservations")
-      .select("status")
-      .eq("id", input.reservation_id)
-      .maybeSingle()
+  console.log("PAGO INSERTADO CORRECTAMENTE:", data);
 
-    if (
-      reservationRow &&
-      (reservationRow.status === "pendiente" ||
-        reservationRow.status === "confirmada")
-    ) {
-      const next = nextReservationStatus(reservationRow.status)
-      if (next) {
-        await supabase
-          .from("reservations")
-          .update({ status: next })
-          .eq("id", input.reservation_id)
-      }
-    }
-  }
-
-  revalidatePath("/dashboard/reservas")
-  revalidatePath("/dashboard/pagos")
+  revalidatePath("/dashboard/reservas");
+  revalidatePath("/dashboard/pagos");
 
   return {
     ok: true,
@@ -245,8 +296,9 @@ export async function createPago(
       created_at: String(data.created_at),
       updated_at: String(data.updated_at),
     },
-  }
+  };
 }
+
 
 
 export async function getIncomeByMonth() {
@@ -288,10 +340,11 @@ export async function updatePagoEstado(
   estado: PagoEstado,
 ): Promise<PagoMutationResult> {
   if (!PAGO_ESTADOS.includes(estado)) {
-    return { ok: false, error: "Estado de pago inválido." }
+    return { ok: false, error: "Estado de pago inválido." };
   }
 
-  const supabase = await createClient()
+  const supabase = await createClient();
+
   const { data, error } = await supabase
     .from("pagos")
     .update({ estado })
@@ -299,43 +352,34 @@ export async function updatePagoEstado(
     .select(
       "id, reservation_id, monto, metodo_pago, estado, referencia, notas, created_by, created_at, updated_at",
     )
-    .single()
+    .single();
 
   if (error || !data) {
     return {
       ok: false,
       error: "No se pudo actualizar el estado del pago.",
-    }
+    };
   }
 
-  // Auto-promoción: si el estado cambia a completado, avanzar la reserva
-  // un paso en la cadena. Cubre `pendiente → confirmada` y
-  // `confirmada → activa`. No auto-avanzamos más allá de `activa`
-  // (`finalizada` representa devolución del vehículo, evento distinto).
   if (estado === "completado") {
-    const { data: reservationRow } = await supabase
+    const { error: reservationError } = await supabase
       .from("reservations")
-      .select("status")
-      .eq("id", String(data.reservation_id))
-      .maybeSingle()
+      .update({ status: "activa" })
+      .eq("id", data.reservation_id);
 
-    if (
-      reservationRow &&
-      (reservationRow.status === "pendiente" ||
-        reservationRow.status === "confirmada")
-    ) {
-      const next = nextReservationStatus(reservationRow.status)
-      if (next) {
-        await supabase
-          .from("reservations")
-          .update({ status: next })
-          .eq("id", String(data.reservation_id))
-      }
-    }
+   if (reservationError) {
+     console.error("ERROR REAL AL CONFIRMAR RESERVA:", reservationError);
+
+     return {
+       ok: false,
+       error: reservationError.message,
+     };
+   }
   }
 
-  revalidatePath("/dashboard/reservas")
-  revalidatePath("/dashboard/pagos")
+revalidatePath("/dashboard/reservas");
+revalidatePath("/dashboard/pagos");
+revalidatePath("/dashboard/clientes");
 
   return {
     ok: true,
@@ -351,7 +395,7 @@ export async function updatePagoEstado(
       created_at: String(data.created_at),
       updated_at: String(data.updated_at),
     },
-  }
+  };
 }
 
 export async function deletePago(pagoId: string): Promise<PagoMutationResult> {

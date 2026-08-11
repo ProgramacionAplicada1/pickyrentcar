@@ -28,7 +28,7 @@ function adaptStatus(dbStatus: string): AdaptedStatus {
     case "finalizada":
       return "Finalizada";
     case "cancelada":
-      return "Cancelada";
+      return "Cancelada"; 
     default:
       return "Pendiente";
   }

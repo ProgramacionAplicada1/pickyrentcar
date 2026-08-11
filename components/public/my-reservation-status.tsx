@@ -9,8 +9,8 @@ const STATUS_CONFIG: Record<
     className: "border-amber-200 bg-amber-50 text-amber-800",
     dotClassName: "bg-amber-500",
   },
-  confirmada: {
-    label: "Confirmada",
+  pendiente_pago: {
+    label: "pendiente de pago",
     className: "border-emerald-200 bg-emerald-50 text-emerald-800",
     dotClassName: "bg-emerald-500",
   },

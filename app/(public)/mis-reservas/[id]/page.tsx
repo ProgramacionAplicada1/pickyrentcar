@@ -57,8 +57,8 @@ function formatCreatedAt(value: string) {
 const STATUS_COPY: Record<string, string> = {
   pendiente:
     "Recibimos tu solicitud. El equipo de PickyRentCar debe validar los próximos pasos antes de confirmarla.",
-  confirmada:
-    "Tu reserva está confirmada. Conserva este número de reserva para cualquier consulta.",
+  pendiente_pago:
+    "Tu reserva fue aceptada. Realiza el pago para activar tu reserva.",
   activa:
     "Tu renta está activa actualmente. Si necesitas asistencia, contacta al equipo de PickyRentCar.",
   finalizada:
@@ -140,7 +140,7 @@ export default async function MyReservationDetailPage({ params }: Props) {
               <div className="flex flex-col justify-center gap-4 p-6">
                 <div>
                   <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                    Vehículo
+                    Vehiculo
                   </p>
                   <h2 className="mt-1 text-2xl font-semibold">
                     {vehicle
@@ -268,19 +268,32 @@ export default async function MyReservationDetailPage({ params }: Props) {
                 </span>
               </div>
 
+              {reservation.status === "pendiente_pago" && (
+                <Button
+                  className="mt-2 rounded-full"
+                  nativeButton={false}
+                  render={
+                    <Link href={`/mis-reservas/${reservation.id}/pagar`} />
+                  }
+                >
+                  Pagar ahora
+                </Button>
+              )}
+
               <Button
-                className="mt-2 rounded-full"
+                variant="outline"
+                className="rounded-full"
                 nativeButton={false}
                 render={<Link href="/catalogo" />}
               >
-                Reservar otro vehículo
+                Reservar otro vehiculo
               </Button>
             </CardContent>
           </Card>
         </aside>
       </div>
     </div>
-  )
+  );
 }
 
 function DetailItem({

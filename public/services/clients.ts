@@ -54,7 +54,7 @@ export async function getClientsByOwner() {
     return [];
   }
 
-  const estadosValidos = ["pendiente_pago", "activa", "finalizada"];
+  const estadosValidos = ["pendiente_pago", "activa", "finalizada","confirmada"];
 
   const clientsMap = new Map<string, ClienteAcumulador>();
 
@@ -96,17 +96,22 @@ export async function getClientsByOwner() {
     client.reservationStatuses.push(reservacion.status);
   }
 
-  for (const client of clientsMap.values()) {
-    if (client.reservationStatuses.includes("activa")) {
-      client.estado = "activo";
-    } else if (
-      client.reservationStatuses.every((status) => status === "finalizada")
-    ) {
-      client.estado = "finalizado";
-    } else {
-      client.estado = "pendiente_pago";
-    }
+for (const client of clientsMap.values()) {
+  if (
+    client.reservationStatuses.includes("activa") ||
+    client.reservationStatuses.includes("confirmada")
+  ) {
+    client.estado = "activo";
+  } else if (
+    client.reservationStatuses.every(
+      (status) => status === "finalizada"
+    )
+  ) {
+    client.estado = "finalizado";
+  } else {
+    client.estado = "pendiente_pago";
   }
+}
 
   return Array.from(clientsMap.values()).map(
     ({ reservationStatuses, ...client }) => client,
