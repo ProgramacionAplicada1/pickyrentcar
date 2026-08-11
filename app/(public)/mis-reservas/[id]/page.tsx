@@ -116,7 +116,7 @@ export default async function MyReservationDetailPage({ params }: Props) {
       <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
         <div className="flex flex-col gap-6">
           <Card className="overflow-hidden rounded-3xl p-0">
-            <div className="grid sm:grid-cols-[220px_1fr]">
+            <div className="grid sm:grid-cols-[180px_1fr]">
               <div className="relative min-h-52 bg-muted">
                 {image ? (
                   <Image

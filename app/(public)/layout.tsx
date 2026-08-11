@@ -2,6 +2,7 @@ import Link from "next/link"
 import Image from "next/image"
 
 import { Button } from "@/components/ui/button"
+import { MobileNav } from "@/components/public/mobile-nav"
 import { PublicUserMenu } from "@/components/public-user-menu"
 import { getCurrentUser } from "@/services/auth"
 
@@ -20,8 +21,8 @@ export default async function PublicLayout({
 
   return (
     <div className="flex min-h-svh flex-col bg-background">
-      <header className="sticky top-0 z-40 border-b bg-background/90 shadow-sm backdrop-blur-xl">
-        <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-4 sm:px-6">
+      <header className="sticky top-0 z-40 border-b bg-background/90 shadow-sm backdrop-blur-xl safe-top">
+        <div className="mx-auto flex h-20 max-w-7xl items-center justify-between gap-2 px-4 sm:px-6">
           <Link
             href="/"
             className="flex items-center gap-3"
@@ -45,12 +46,12 @@ export default async function PublicLayout({
             <Link href="/#como-funciona" className="text-muted-foreground transition-colors hover:text-primary">Cómo funciona</Link>
             <Link href="/#contacto" className="text-muted-foreground transition-colors hover:text-primary">Contacto</Link>
           </nav>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
             {!user ? (
               <Button
                 variant="default"
                 size="sm"
-                className="rounded-full px-5"
+                className="rounded-full px-4 sm:px-5"
                 nativeButton={false}
                 render={<Link href="/login" />}
               >
@@ -80,6 +81,12 @@ export default async function PublicLayout({
                 />
               </>
             )}
+            <MobileNav
+              isAuthenticated={Boolean(user)}
+              isAdmin={isAdmin}
+              displayName={user?.displayName ?? null}
+              email={user?.email ?? null}
+            />
           </div>
         </div>
       </header>
