@@ -1,6 +1,7 @@
 import Image from "next/image"
 import Link from "next/link"
 import { redirect } from "next/navigation"
+import { ScrollToSection } from "@/components/ui/scroll-to-section"
 import {
   FiArrowRight,
   FiCalendar,
@@ -48,10 +49,10 @@ export default async function LandingPage({
           </Link>
 
           <nav className="hidden items-center gap-7 text-sm font-medium text-white/85 lg:flex">
-            <Link href="#ventajas" className="transition hover:text-white">Beneficios</Link>
+            <ScrollToSection href="#ventajas" className="transition hover:text-white">Beneficios</ScrollToSection>
             <Link href="/catalogo" className="transition hover:text-white">Vehículos</Link>
-            <Link href="#como-funciona" className="transition hover:text-white">Cómo funciona</Link>
-            <Link href="#contacto" className="transition hover:text-white">Contacto</Link>
+            <ScrollToSection href="#como-funciona" className="transition hover:text-white">Cómo funciona</ScrollToSection>
+            <ScrollToSection href="#contacto" className="transition hover:text-white">Contacto</ScrollToSection>
           </nav>
 
           <div className="flex items-center gap-2">
@@ -188,7 +189,7 @@ export default async function LandingPage({
       <footer id="contacto" className="border-t bg-slate-950 px-4 py-14 text-white sm:px-6">
         <div className="mx-auto grid max-w-7xl gap-10 md:grid-cols-2 lg:grid-cols-4">
           <div><div className="flex items-center gap-3"><span className="flex size-10 items-center justify-center rounded-xl bg-white"><Image src="/PickyLogo.svg" alt="" width={30} height={30} /></span><span className="font-bold">PickyRentCar</span></div><p className="mt-5 max-w-xs text-sm leading-6 text-white/55">Movilidad confiable para descubrir cada destino con libertad.</p></div>
-          <div><h3 className="font-bold">Explora</h3><div className="mt-5 flex flex-col gap-3 text-sm text-white/60"><Link href="/catalogo" className="hover:text-white">Vehículos</Link><Link href="#como-funciona" className="hover:text-white">Cómo funciona</Link><Link href="/login" className="hover:text-white">Mi cuenta</Link></div></div>
+          <div><h3 className="font-bold">Explora</h3><div className="mt-5 flex flex-col gap-3 text-sm text-white/60"><Link href="/catalogo" className="hover:text-white">Vehículos</Link><ScrollToSection href="#como-funciona" className="hover:text-white">Cómo funciona</ScrollToSection><Link href="/login" className="hover:text-white">Mi cuenta</Link></div></div>
           <div><h3 className="font-bold">Contacto</h3><div className="mt-5 flex flex-col gap-3 text-sm text-white/60"><a href="tel:+18492291027" className="flex items-center gap-2 hover:text-white"><FiPhone /> 849-229-1027</a><a href="mailto:pickyrentcar2026@gmail.com" className="flex items-center gap-2 hover:text-white"><FiMail /> pickyrentcar2026@gmail.com</a><span className="flex items-start gap-2"><FiMapPin className="mt-0.5" /> Av. Libertad esq. Restauración, San Francisco de Macorís</span></div></div>
           <div><h3 className="font-bold">Síguenos</h3><div className="mt-5 flex gap-3"><a href="#" aria-label="Instagram" className="flex size-10 items-center justify-center rounded-full border border-white/15 text-white/70 hover:bg-white hover:text-slate-950"><FiInstagram /></a><a href="https://wa.me/18492291027" aria-label="WhatsApp" className="flex size-10 items-center justify-center rounded-full border border-white/15 text-white/70 hover:bg-white hover:text-slate-950"><FaWhatsapp /></a></div></div>
         </div>

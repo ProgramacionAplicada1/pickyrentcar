@@ -3,6 +3,7 @@ import Image from "next/image"
 
 import { Button } from "@/components/ui/button"
 import { MobileNav } from "@/components/public/mobile-nav"
+import { ScrollToSection } from "@/components/ui/scroll-to-section"
 import { PublicUserMenu } from "@/components/public-user-menu"
 import { getCurrentUser } from "@/services/auth"
 
@@ -42,9 +43,9 @@ export default async function PublicLayout({
             >
               Vehículos
             </Link>
-            <Link href="/#ventajas" className="text-muted-foreground transition-colors hover:text-primary">Beneficios</Link>
-            <Link href="/#como-funciona" className="text-muted-foreground transition-colors hover:text-primary">Cómo funciona</Link>
-            <Link href="/#contacto" className="text-muted-foreground transition-colors hover:text-primary">Contacto</Link>
+            <ScrollToSection href="/#ventajas" className="text-muted-foreground transition-colors hover:text-primary">Beneficios</ScrollToSection>
+            <ScrollToSection href="/#como-funciona" className="text-muted-foreground transition-colors hover:text-primary">Cómo funciona</ScrollToSection>
+            <ScrollToSection href="/#contacto" className="text-muted-foreground transition-colors hover:text-primary">Contacto</ScrollToSection>
           </nav>
           <div className="flex items-center gap-2 sm:gap-3">
             {!user ? (

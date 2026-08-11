@@ -129,6 +129,14 @@
   }
   html {
     @apply font-sans;
+    scroll-behavior: smooth;
+    /* Compensa headers sticky (h-20 = 80px) en rutas con ancla */
+    scroll-padding-top: 5rem;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
   }
 }
 
