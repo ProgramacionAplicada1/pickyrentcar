@@ -1,8 +1,6 @@
-import Link from "next/link"
 import { notFound } from "next/navigation"
 import { HugeiconsIcon } from "@hugeicons/react"
 import {
-  ArrowLeft01Icon,
   Calendar01Icon,
   Car01Icon,
   Dollar01Icon,
@@ -17,7 +15,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
+import { BackButton } from "@/components/ui/back-button"
 import { Separator } from "@/components/ui/separator"
 import { StatusBadge } from "@/components/vehicles/status-badge"
 import { ReservationStatusActions } from "../components/reservation-status-actions"
@@ -47,16 +45,11 @@ export default async function ReservationDetailPage({ params }: Props) {
 
   return (
     <div className="flex flex-1 flex-col gap-6 p-6">
-      <Button
-        variant="ghost"
-        size="sm"
+      <BackButton
+        fallbackHref="/dashboard/reservas"
+        label="Volver a reservas"
         className="w-fit rounded-full"
-        nativeButton={false}
-        render={<Link href="/dashboard/reservas" />}
-      >
-        <HugeiconsIcon icon={ArrowLeft01Icon} strokeWidth={1.75} />
-        Volver a reservas
-      </Button>
+      />
 
       <div className="mx-auto flex w-full max-w-3xl flex-col gap-4">
         <Card className="gap-0 overflow-hidden rounded-2xl p-0">

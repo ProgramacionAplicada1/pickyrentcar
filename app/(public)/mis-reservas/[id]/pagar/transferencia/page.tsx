@@ -1,9 +1,8 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { FiArrowLeft, FiCopy } from "react-icons/fi";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { BackButton } from "@/components/ui/back-button";
 import { getCurrentUser } from "@/services/auth";
 import { getMyReservationById } from "@/services/my-reservations";
 import { formatCurrency } from "@/lib/utils/formatCurrency";
@@ -49,15 +48,13 @@ export default async function TransferPaymentPage({ params }: Props) {
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-col gap-6 px-4 py-8 sm:px-6 sm:py-12">
       <div>
-        <Button
-          variant="ghost"
+        <BackButton
+          fallbackHref={`/mis-reservas/${id}/pagar`}
+          label="Volver a métodos de pago"
+          icon={<FiArrowLeft />}
+          size="default"
           className="-ml-3 rounded-full"
-          nativeButton={false}
-          render={<Link href={`/mis-reservas/${id}/pagar`} />}
-        >
-          <FiArrowLeft />
-          Volver a metodos de pago
-        </Button>
+        />
       </div>
 
       <div className="flex flex-col gap-2">

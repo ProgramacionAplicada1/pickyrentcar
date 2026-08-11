@@ -1,8 +1,6 @@
-import Link from "next/link"
 import { notFound } from "next/navigation"
 import { HugeiconsIcon } from "@hugeicons/react"
 import {
-  ArrowLeft01Icon,
   Calendar01Icon,
   Car01Icon,
   CheckmarkCircle02Icon,
@@ -13,7 +11,6 @@ import {
 } from "@hugeicons/core-free-icons"
 
 import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
 import {
   Card,
   CardContent,
@@ -21,6 +18,7 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
+import { BackButton } from "@/components/ui/back-button"
 import { ImageGalleryDialog } from "@/components/vehicles/image-gallery-dialog"
 import { ReservationForm } from "@/components/public/reservation-form"
 import { FavoriteButton } from "@/components/public/favorite-button"
@@ -63,20 +61,16 @@ export default async function CatalogoVehiclePage({
   const backParams = new URLSearchParams()
   if (from) backParams.set("from", from)
   if (to) backParams.set("to", to)
-  const backHref = "/catalogo" + (backParams.size ? "?" + backParams.toString() : "");
+  const backHref =
+    "/catalogo" + (backParams.size ? "?" + backParams.toString() : "")
 
   return (
     <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 py-8 sm:px-6 sm:py-10">
-      <Button
-        variant="ghost"
-        size="sm"
+      <BackButton
+        fallbackHref={backHref}
+        label="Volver al catálogo"
         className="w-fit rounded-full"
-        nativeButton={false}
-        render={<Link href={backHref} />}
-      >
-        <HugeiconsIcon icon={ArrowLeft01Icon} strokeWidth={1.75} />
-        Volver al catálogo
-      </Button>
+      />
 
       <div className="grid gap-6 lg:grid-cols-[1.4fr_1fr]">
         <div className="flex flex-col gap-6">

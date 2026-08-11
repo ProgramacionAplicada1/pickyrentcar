@@ -18,6 +18,7 @@ import { MyReservationStatus } from "@/components/public/my-reservation-status"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
+import { BackButton } from "@/components/ui/back-button"
 import { formatCurrency } from "@/lib/utils/formatCurrency"
 import { getCurrentUser } from "@/services/auth"
 import { getMyReservationById } from "@/services/my-reservations"
@@ -83,15 +84,13 @@ export default async function MyReservationDetailPage({ params }: Props) {
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-8 sm:px-6 sm:py-12">
       <div>
-        <Button
-          variant="ghost"
+        <BackButton
+          fallbackHref="/mis-reservas"
+          label="Volver a mis reservas"
+          icon={<FiArrowLeft />}
+          size="default"
           className="-ml-3 rounded-full"
-          nativeButton={false}
-          render={<Link href="/mis-reservas" />}
-        >
-          <FiArrowLeft />
-          Volver a mis reservas
-        </Button>
+        />
       </div>
 
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-start">

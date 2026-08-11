@@ -1,12 +1,10 @@
 import type { Metadata } from "next"
 import Image from "next/image"
-import Link from "next/link"
 import { redirect } from "next/navigation"
-import { HugeiconsIcon } from "@hugeicons/react"
-import { ArrowLeft01Icon } from "@hugeicons/core-free-icons"
 
 import { Card, CardContent } from "@/components/ui/card"
 import { ClientRegisterForm } from "@/components/client-register-form"
+import { BackButton } from "@/components/ui/back-button"
 import { createClient } from "@/lib/supabase/server"
 
 export const metadata: Metadata = {
@@ -27,17 +25,12 @@ export default async function ClientRegisterPage() {
 
   return (
     <div className="flex min-h-full flex-1 flex-col items-center justify-center bg-zinc-50 px-4 py-4 sm:py-6">
-      <Link
-        href="/"
-        className="absolute top-4 left-4 z-10 inline-flex items-center gap-1.5 rounded-full bg-card/80 px-3 py-1.5 text-sm font-medium text-muted-foreground shadow-sm backdrop-blur transition-colors hover:bg-card hover:text-foreground"
-      >
-        <HugeiconsIcon
-          icon={ArrowLeft01Icon}
-          strokeWidth={1.75}
-          className="size-4"
-        />
-        Volver al inicio
-      </Link>
+      <BackButton
+        fallbackHref="/"
+        label="Volver al inicio"
+        size="sm"
+        className="absolute top-4 left-4 z-10 rounded-full bg-card/80 px-3 py-1.5 font-medium text-muted-foreground shadow-sm backdrop-blur transition-colors hover:bg-card hover:text-foreground"
+      />
 
       <div className="flex w-full max-w-md flex-col gap-3">
         <header className="flex flex-col items-center gap-2 text-center">
