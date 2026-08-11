@@ -244,7 +244,9 @@ export async function getReservationStats(): Promise<ReservationStats> {
   const hoy = reservations.filter(
     (r) => r.start_date <= todayIso && r.end_date >= todayIso,
   ).length;
-  const facturado = await getTotalFacturadoFromCompletedPagos();
+  const facturado = await getTotalFacturadoFromCompletedPagos(
+  reservations.map((reservation) => reservation.id),
+);
 
   return { total, activas, hoy, facturado };
 }
@@ -271,22 +273,36 @@ export async function getReservationsWithPaymentStatus(): Promise<Set<string>> {
   return getReservationIdsWithCompletedPayment();
 }
 
-async function getTotalFacturadoFromCompletedPagos(): Promise<number> {
-  const { createClient } = await import("@/lib/supabase/server");
+async function getTotalFacturadoFromCompletedPagos(
+  reservationIds: string[],
+): Promise<number> {
+  if (reservationIds.length === 0) {
+    return 0;
+  }
+
   const supabase = await createClient();
-  const { data } = await supabase
+
+  const { data, error } = await supabase
     .from("pagos")
     .select("monto")
-    .eq("estado", "completado");
+    .eq("estado", "completado")
+    .in("reservation_id", reservationIds);
+
+  if (error) {
+    console.error("ERROR OBTENIENDO FACTURACIÓN:", error);
+    return 0;
+  }
+
   return (data ?? []).reduce(
     (acc, row) => acc + Number((row as { monto: number }).monto),
     0,
   );
 }
-
 // ============================================================================
 // Mutations
 // ============================================================================
+
+
 
 export async function advanceReservationStatus(
   reservationId: string,
@@ -339,6 +355,8 @@ export async function advanceReservationStatus(
   revalidatePath(`/dashboard/reservas/${reservationId}`);
   return { ok: true };
 }
+
+
 
 export async function cancelReservation(
   reservationId: string,

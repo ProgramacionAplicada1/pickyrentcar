@@ -54,7 +54,12 @@ export async function getClientsByOwner() {
     return [];
   }
 
-  const estadosValidos = ["pendiente_pago", "activa", "finalizada"];
+ const estadosValidos = [
+   "pendiente_pago",
+   "confirmada",
+   "activa",
+   "finalizada",
+ ];
 
   const clientsMap = new Map<string, ClienteAcumulador>();
 
@@ -107,6 +112,11 @@ export async function getClientsByOwner() {
       client.estado = "pendiente_pago";
     }
   }
+
+  console.log("===== CLIENTES ADMIN =====");
+  console.log("RESERVACIONES:", reservaciones);
+  console.log("CLIENTES MAP:", Array.from(clientsMap.values()));
+  console.log("==========================");
 
   return Array.from(clientsMap.values()).map(
     ({ reservationStatuses, ...client }) => client,

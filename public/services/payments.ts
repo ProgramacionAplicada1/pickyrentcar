@@ -270,10 +270,10 @@ export async function updatePagoEstado(
   estado: PagoEstado,
 ): Promise<PagoMutationResult> {
   if (!PAGO_ESTADOS.includes(estado)) {
-    return { ok: false, error: "Estado de pago inválido." }
+    return { ok: false, error: "Estado de pago inválido." };
   }
 
-  const supabase = await createClient()
+  const supabase = await createClient();
   const { data, error } = await supabase
     .from("pagos")
     .update({ estado })
@@ -281,43 +281,40 @@ export async function updatePagoEstado(
     .select(
       "id, reservation_id, monto, metodo_pago, estado, referencia, notas, created_by, created_at, updated_at",
     )
-    .single()
+    .single();
 
   if (error || !data) {
     return {
       ok: false,
       error: "No se pudo actualizar el estado del pago.",
-    }
+    };
   }
 
   // Auto-promoción: si el estado cambia a completado, avanzar la reserva
   // un paso en la cadena. Cubre `pendiente → confirmada` y
   // `confirmada → activa`. No auto-avanzamos más allá de `activa`
   // (`finalizada` representa devolución del vehículo, evento distinto).
-  if (estado === "completado") {
-    const { data: reservationRow } = await supabase
-      .from("reservations")
-      .select("status")
-      .eq("id", String(data.reservation_id))
-      .maybeSingle()
-
-    if (
-      reservationRow &&
-      (reservationRow.status === "pendiente" ||
-        reservationRow.status === "confirmada")
-    ) {
-      const next = nextReservationStatus(reservationRow.status)
-      if (next) {
-        await supabase
-          .from("reservations")
-          .update({ status: next })
-          .eq("id", String(data.reservation_id))
-      }
+  // Cuando el pago es confirmado,
+  // la reserva pasa de pendiente_pago a activa.
+if (estado === "completado") {
+  const { error: reservationError } = await supabase
+    .from("reservations")
+    .update({ status: "activa" })
+    .eq("id", String(data.reservation_id))
+  if (reservationError) {
+    console.error("ERROR AL ACTIVAR RESERVA:", reservationError)
+    return {
+      ok: false,
+      error: reservationError.message,
     }
+
   }
 
-  revalidatePath("/dashboard/reservas")
-  revalidatePath("/dashboard/pagos")
+}
+
+revalidatePath("/dashboard/reservas");
+revalidatePath("/dashboard/pagos");
+revalidatePath("/dashboard/clientes");
 
   return {
     ok: true,
@@ -333,7 +330,7 @@ export async function updatePagoEstado(
       created_at: String(data.created_at),
       updated_at: String(data.updated_at),
     },
-  }
+  };
 }
 
 export async function deletePago(pagoId: string): Promise<PagoMutationResult> {

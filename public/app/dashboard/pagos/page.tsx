@@ -2,8 +2,7 @@ import { HugeiconsIcon } from "@hugeicons/react"
 import { MoneyBag01Icon } from "@hugeicons/core-free-icons"
 
 import {
-  PaymentAction,
-  PaymentRowActions,
+  PaymentRowActions,PaymentActions,
   type PagoListItem,
 } from "./payment-modal"
 import { formatCurrency } from "@/lib/utils/formatCurrency"
@@ -89,7 +88,7 @@ export default async function PagosPage() {
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {pagos.map((pago) => {
-                  const item = adaptToListItem(pago)
+                  const item = adaptToListItem(pago);
                   return (
                     <tr
                       key={pago.id}
@@ -127,7 +126,7 @@ export default async function PagosPage() {
                         <PaymentRowActions pago={item} />
                       </td>
                     </tr>
-                  )
+                  );
                 })}
               </tbody>
             </table>
@@ -135,5 +134,5 @@ export default async function PagosPage() {
         </div>
       )}
     </div>
-  )
+  );
 }

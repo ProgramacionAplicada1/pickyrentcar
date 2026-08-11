@@ -48,7 +48,7 @@ export function PaymentRowActions({ pago }: { pago: PagoListItem }) {
 
     setIsProcessing(false);
 
-    if (!result.ok) {
+    if (!result.ok) { 
       setError(result.error);
       return;
     }

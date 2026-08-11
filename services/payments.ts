@@ -210,7 +210,8 @@ export async function createPago(
     };
   }
 
- const estado: PagoEstado = "pendiente";
+ //const estado: PagoEstado = "pendiente";
+ const estado: PagoEstado = input.estado ?? "pendiente";
 
   // Verificamos que el usuario sea dueño de la reserva
   const { data: ownsReservation, error: ownsError } = await supabase.rpc(
@@ -363,7 +364,7 @@ export async function updatePagoEstado(
   if (estado === "completado") {
     const { error: reservationError } = await supabase
       .from("reservations")
-      .update({ status: "confirmada" })
+      .update({ status: "activa" })
       .eq("id", data.reservation_id);
 
    if (reservationError) {
@@ -376,8 +377,9 @@ export async function updatePagoEstado(
    }
   }
 
-  revalidatePath("/dashboard/reservas");
-  revalidatePath("/dashboard/pagos");
+revalidatePath("/dashboard/reservas");
+revalidatePath("/dashboard/pagos");
+revalidatePath("/dashboard/clientes");
 
   return {
     ok: true,
