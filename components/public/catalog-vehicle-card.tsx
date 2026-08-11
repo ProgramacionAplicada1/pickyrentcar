@@ -49,6 +49,20 @@ export function CatalogVehicleCard({
 }: Props) {
   const href = detailHref ?? `/catalogo/${vehicle.id}`
 
+  
+  const normalizedStatus = String(vehicle.status).toLowerCase().trim()
+  
+  let badgeText = "Disponible"
+  let badgeClasses = "border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-50 dark:border-emerald-900 dark:bg-emerald-950 dark:text-emerald-300"
+
+  if (normalizedStatus === "in_use" || normalizedStatus === "uso") {
+    badgeText = "En uso"
+    badgeClasses = "border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-50 dark:border-blue-900 dark:bg-blue-950 dark:text-blue-300"
+  } else if (normalizedStatus === "maintenance" || normalizedStatus === "mantenimiento") {
+    badgeText = "Mantenimiento"
+    badgeClasses = "border-red-200 bg-red-50 text-red-700 hover:bg-red-50 dark:border-red-900 dark:bg-red-950 dark:text-red-300"
+  }
+
   return (
     <Card className="group gap-0 overflow-hidden rounded-2xl p-0 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg">
       <div className="relative">
@@ -74,11 +88,10 @@ export function CatalogVehicleCard({
           }
         />
 
-        {vehicle.status === "available" && (
-          <Badge className="absolute top-3 left-3 border border-emerald-200 bg-emerald-50 text-emerald-700 shadow-sm hover:bg-emerald-50 dark:border-emerald-900 dark:bg-emerald-950 dark:text-emerald-300">
-            Disponible
-          </Badge>
-        )}
+       
+        <Badge className={`absolute top-3 left-3 border shadow-sm ${badgeClasses}`}>
+          {badgeText}
+        </Badge>
       </div>
 
       <CardHeader className="gap-1.5 p-4 pb-2">
