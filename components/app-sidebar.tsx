@@ -81,25 +81,39 @@ export function AppSidebar() {
   React.useEffect(() => {
     const supabase = createClient()
     let active = true
-    supabase.auth
-      .getUser()
-      .then(({ data }) => {
-        if (!active || !data.user) return
-        const meta =
-          (data.user.user_metadata as Record<string, string | undefined>) ?? {}
-        const name =
-          meta.full_name ??
-          meta.name ??
-          meta.nombre ??
-          data.user.email?.split("@")[0] ??
-          "Usuario"
-        setUser({ name, email: data.user.email ?? "" })
-      })
-      .catch(() => {
-        /* ignore silently in sidebar */
-      })
+
+    
+    const fetchUser = async () => {
+      const { data } = await supabase.auth.getUser()
+      if (!active || !data.user) return
+
+      const meta = (data.user.user_metadata as Record<string, string | undefined>) ?? {}
+      
+      
+      const name =
+        meta.display_name ??
+        meta.full_name ??
+        meta.name ??
+        meta.nombre ??
+        data.user.email?.split("@")[0] ??
+        "Usuario"
+        
+      setUser({ name, email: data.user.email ?? "" })
+    }
+
+    
+    fetchUser()
+
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'USER_UPDATED') {
+        fetchUser()
+      }
+    })
+
     return () => {
       active = false
+      subscription.unsubscribe()
     }
   }, [])
 
