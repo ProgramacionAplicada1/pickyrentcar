@@ -116,12 +116,6 @@ export default async function PagarReservacion({ params }: Props) {
             description="Realiza una transferencia a la cuenta bancaria de PickyRentCar."
             href={`/mis-reservas/${id}/pagar/transferencia`}
           />
-
-          <PaymentMethodCard
-            title="Efectivo"
-            description="Realiza el pago en efectivo al momento de recibir el vehículo."
-            href={`/mis-reservas/${id}/pagar/efectivo`}
-          />
         </CardContent>
       </Card>
     </div>
