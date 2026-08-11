@@ -1,9 +1,5 @@
-import Link from "next/link"
 import { notFound } from "next/navigation"
-import { HugeiconsIcon } from "@hugeicons/react"
-import { ArrowLeft01Icon } from "@hugeicons/core-free-icons"
 
-import { Button } from "@/components/ui/button"
 import {
   Card,
   CardContent,
@@ -12,6 +8,7 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { VehicleForm } from "@/components/vehicles/vehicle-form"
+import { BackButton } from "@/components/vehicles/back-button"
 import type { VehicleFormData } from "@/app/dashboard/vehicles/validations"
 import { getVehicleById } from "@/services/vehicles"
 
@@ -47,16 +44,7 @@ export default async function EditVehiclePage({ params }: Props) {
 
   return (
     <div className="flex flex-1 flex-col gap-6 p-6">
-      <Button
-        variant="ghost"
-        size="sm"
-        className="w-fit rounded-full"
-        nativeButton={false}
-        render={<Link href={`/dashboard/vehicles/${vehicle.id}`} />}
-      >
-        <HugeiconsIcon icon={ArrowLeft01Icon} strokeWidth={1.75} />
-        Volver
-      </Button>
+      <BackButton />
 
       <div className="mx-auto w-full max-w-2xl">
         <Card className="gap-5 rounded-2xl p-5">
