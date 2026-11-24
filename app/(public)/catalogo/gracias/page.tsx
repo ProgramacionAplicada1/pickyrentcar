@@ -44,8 +44,8 @@ export default async function GraciasPage({ searchParams }: Props) {
             ¡Tu reserva fue recibida!
           </CardTitle>
           <CardDescription>
-            Pronto recibirás un correo de confirmación con los siguientes
-            pasos para completar el pago del anticipo.
+            El propietario revisará tu solicitud. Cuando la acepte podrás
+            pagarla desde “Mis reservas”.
           </CardDescription>
         </CardHeader>
 
@@ -69,9 +69,12 @@ export default async function GraciasPage({ searchParams }: Props) {
               Próximos pasos
             </p>
             <ul className="ml-4 list-disc space-y-1.5 text-sm text-muted-foreground">
-              <li>Revisa tu correo para los detalles de pago.</li>
               <li>
-                Una vez recibido el anticipo, tu reserva pasará a estado
+                Cuando el propietario acepte tu reserva, tendrás 48 horas para
+                pagarla por transferencia o elegir efectivo al recoger.
+              </li>
+              <li>
+                Al verificar tu pago, la reserva pasará a
                 &quot;Confirmada&quot;.
               </li>
               <li>

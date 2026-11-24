@@ -78,7 +78,6 @@ function ActionButton({
 export default function ReservationActions({
   reservation,
   onView,
-  hasCompletedPayment = false,
 }: ReservationActionsProps) {
   const router = useRouter()
   const [advancePending, setAdvancePending] = React.useState(false)
@@ -118,11 +117,13 @@ export default function ReservationActions({
     router.push(`/dashboard/reservas/${reservation.id}`)
   }
 
-const isFinal = reservation.estado === "Cancelada" || reservation.estado === "Finalizada"
-const isPending = reservation.estado === "Pendiente"
-const isPendingPayment = reservation.estado === "Pendiente de pago"
-
-const requiresPaymentToAdvance = isPendingPayment && !hasCompletedPayment;
+  const isFinal =
+    reservation.estado === "Cancelada" || reservation.estado === "Finalizada"
+  // "Por pagar" y "Pago en revisión" avanzan solo al confirmar el pago (Pagos).
+  const requiresPaymentToAdvance =
+    reservation.estado === "Por pagar" ||
+    reservation.estado === "Pago en revisión"
+  const canCancel = !isFinal && reservation.estado !== "En curso"
 
   return (
     <div className="flex items-center justify-end gap-2">
@@ -178,7 +179,7 @@ const requiresPaymentToAdvance = isPendingPayment && !hasCompletedPayment;
           </DropdownMenuItem>
           <DropdownMenuItem
             variant="destructive"
-            disabled={isFinal || advancePending || cancelPending}
+            disabled={!canCancel || advancePending || cancelPending}
             onClick={handleCancel}
           >
             {cancelPending ? <Spinner /> : <FaBan />}

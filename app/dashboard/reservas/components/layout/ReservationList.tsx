@@ -48,10 +48,14 @@ export default function ReservationList({
       if (!matchesQuery(r, query)) return false;
 
       switch (activeTab) {
-        case "Activas":
-          return r.estado === "Activa";
         case "Pendientes":
-          return r.estado === "Pendiente" || r.estado === "Pendiente de pago";
+          return r.estado === "Pendiente";
+        case "Por pagar":
+          return r.estado === "Por pagar" || r.estado === "Pago en revisión";
+        case "Confirmadas":
+          return r.estado === "Confirmada";
+        case "En curso":
+          return r.estado === "En curso";
         case "Finalizadas":
           return r.estado === "Finalizada";
         case "Canceladas":

@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server"
+import { expireOverdueReservations } from "@/services/reservations"
 
 export type MyReservationVehicle = {
   id: string
@@ -26,14 +27,26 @@ export type MyReservation = {
   daily_price: number
   total_price: number
   status: string
+  payment_due_at: string | null
   notes: string | null
   location: string | null
   created_at: string
   updated_at: string
   vehicle: MyReservationVehicle | null
+  /** Último pago reportado (pendiente, completado o rechazado). */
+  latest_payment: MyReservationPayment | null
 }
 
-type ReservationDbRow = Omit<MyReservation, "vehicle"> & {
+export type MyReservationPayment = {
+  id: string
+  estado: "pendiente" | "completado" | "fallido" | "reembolsado"
+  metodo_pago: string
+  referencia: string | null
+  motivo_rechazo: string | null
+  created_at: string
+}
+
+type ReservationDbRow = Omit<MyReservation, "vehicle" | "latest_payment"> & {
   vehicle_id: string
 }
 
@@ -69,6 +82,37 @@ function normalizeVehicle(row: PublicVehicleRow): MyReservationVehicle {
   }
 }
 
+const MY_RESERVATION_COLUMNS =
+  "id, numero, vehicle_id, client_name, client_email, client_phone, start_date, end_date, days, daily_price, total_price, status, payment_due_at, notes, location, created_at, updated_at"
+
+async function getLatestPaymentMap(reservationIds: string[]) {
+  const map = new Map<string, MyReservationPayment>()
+  if (reservationIds.length === 0) return map
+
+  const supabase = await createClient()
+  const { data, error } = await supabase
+    .from("pagos")
+    .select("id, reservation_id, estado, metodo_pago, referencia, motivo_rechazo, created_at")
+    .in("reservation_id", reservationIds)
+    .order("created_at", { ascending: false })
+
+  if (error) return map
+
+  for (const row of data ?? []) {
+    const id = String(row.reservation_id)
+    if (map.has(id)) continue // ya tenemos el más reciente
+    map.set(id, {
+      id: String(row.id),
+      estado: row.estado as MyReservationPayment["estado"],
+      metodo_pago: String(row.metodo_pago),
+      referencia: (row.referencia as string | null) ?? null,
+      motivo_rechazo: (row.motivo_rechazo as string | null) ?? null,
+      created_at: String(row.created_at),
+    })
+  }
+  return map
+}
+
 async function getVehicleMap(vehicleIds: string[]) {
   const supabase = await createClient()
   const uniqueIds = [...new Set(vehicleIds.filter(Boolean))]
@@ -101,10 +145,12 @@ export async function listMyReservations(): Promise<MyReservation[]> {
 
   if (!user) return []
 
+  await expireOverdueReservations(supabase)
+
   const { data, error } = await supabase
     .from("reservations")
     .select(
-      "id, numero, vehicle_id, client_name, client_email, client_phone, start_date, end_date, days, daily_price, total_price, status, notes, location, created_at, updated_at",
+      MY_RESERVATION_COLUMNS,
     )
     .eq("client_id", user.id)
     .order("created_at", { ascending: false })
@@ -112,7 +158,10 @@ export async function listMyReservations(): Promise<MyReservation[]> {
   if (error || !data) return []
 
   const rows = data as ReservationDbRow[]
-  const vehicleMap = await getVehicleMap(rows.map((row) => row.vehicle_id))
+  const [vehicleMap, paymentMap] = await Promise.all([
+    getVehicleMap(rows.map((row) => row.vehicle_id)),
+    getLatestPaymentMap(rows.map((row) => row.id)),
+  ])
 
   return rows.map((row) => ({
     ...row,
@@ -120,6 +169,7 @@ export async function listMyReservations(): Promise<MyReservation[]> {
     daily_price: Number(row.daily_price),
     total_price: Number(row.total_price),
     vehicle: vehicleMap.get(row.vehicle_id) ?? null,
+    latest_payment: paymentMap.get(row.id) ?? null,
   }))
 }
 
@@ -133,10 +183,12 @@ export async function getMyReservationById(
 
   if (!user) return null
 
+  await expireOverdueReservations(supabase)
+
   const { data, error } = await supabase
     .from("reservations")
     .select(
-      "id, numero, vehicle_id, client_name, client_email, client_phone, start_date, end_date, days, daily_price, total_price, status, notes, location, created_at, updated_at",
+      MY_RESERVATION_COLUMNS,
     )
     .eq("id", reservationId)
     .eq("client_id", user.id)
@@ -145,7 +197,10 @@ export async function getMyReservationById(
   if (error || !data) return null
 
   const row = data as ReservationDbRow
-  const vehicleMap = await getVehicleMap([row.vehicle_id])
+  const [vehicleMap, paymentMap] = await Promise.all([
+    getVehicleMap([row.vehicle_id]),
+    getLatestPaymentMap([row.id]),
+  ])
 
   return {
     ...row,
@@ -153,5 +208,6 @@ export async function getMyReservationById(
     daily_price: Number(row.daily_price),
     total_price: Number(row.total_price),
     vehicle: vehicleMap.get(row.vehicle_id) ?? null,
+    latest_payment: paymentMap.get(row.id) ?? null,
   }
 }

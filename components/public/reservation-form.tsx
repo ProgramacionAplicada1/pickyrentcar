@@ -216,9 +216,9 @@ export function ReservationForm({
           </span>
         </div>
         <FieldDescription>
-          El pago del avance se coordina directamente con el proveedor. Tu
-          reserva quedará en estado <strong>Pendiente</strong> hasta confirmar
-          el anticipo.
+          No pagas nada ahora. Tu reserva quedará{" "}
+          <strong>pendiente de aprobación</strong>; cuando el propietario la
+          acepte, podrás pagarla desde “Mis reservas”.
         </FieldDescription>
       </div>
 

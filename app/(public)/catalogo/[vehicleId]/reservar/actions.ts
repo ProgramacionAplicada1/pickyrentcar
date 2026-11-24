@@ -2,7 +2,6 @@
 
 import {
   createPublicReservation as createReservationService,
-  type PublicReservationFieldErrors,
   type PublicReservationResult,
 } from "@/services/catalog"
 

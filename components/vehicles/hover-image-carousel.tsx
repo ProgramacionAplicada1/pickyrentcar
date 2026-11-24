@@ -15,6 +15,18 @@ import { cn } from "@/lib/utils"
 
 const ROTATION_INTERVAL_MS = 1800
 
+const REDUCED_MOTION_QUERY = "(prefers-reduced-motion: reduce)"
+
+function subscribeReducedMotion(onChange: () => void) {
+  const mq = window.matchMedia(REDUCED_MOTION_QUERY)
+  mq.addEventListener("change", onChange)
+  return () => mq.removeEventListener("change", onChange)
+}
+
+function getReducedMotionSnapshot() {
+  return window.matchMedia(REDUCED_MOTION_QUERY).matches
+}
+
 type Props = {
   images: string[]
   alt: string
@@ -43,18 +55,11 @@ export function HoverImageCarousel({
   const [api, setApi] = React.useState<CarouselApi | null>(null)
   const [hovered, setHovered] = React.useState(false)
   const [current, setCurrent] = React.useState(0)
-  const [prefersReducedMotion, setPrefersReducedMotion] =
-    React.useState(false)
-
-  React.useEffect(() => {
-    if (typeof window === "undefined") return
-    const mq = window.matchMedia("(prefers-reduced-motion: reduce)")
-    setPrefersReducedMotion(mq.matches)
-    const handler = (e: MediaQueryListEvent) =>
-      setPrefersReducedMotion(e.matches)
-    mq.addEventListener("change", handler)
-    return () => mq.removeEventListener("change", handler)
-  }, [])
+  const prefersReducedMotion = React.useSyncExternalStore(
+    subscribeReducedMotion,
+    getReducedMotionSnapshot,
+    () => false,
+  )
 
   React.useEffect(() => {
     if (!api) return

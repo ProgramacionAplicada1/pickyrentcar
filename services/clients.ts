@@ -20,6 +20,34 @@ export type CLIENTE = {
   ultimaReserva: string;
 };
 
+type SupabaseServerClient = Awaited<ReturnType<typeof createClient>>;
+
+/** Suma de pagos `completado` por reserva (lo realmente pagado). */
+async function getPaidAmountByReservation(
+  supabase: SupabaseServerClient,
+  reservationIds: string[],
+): Promise<Map<string, number>> {
+  const paid = new Map<string, number>();
+  if (reservationIds.length === 0) return paid;
+
+  const { data, error } = await supabase
+    .from("pagos")
+    .select("reservation_id, monto")
+    .eq("estado", "completado")
+    .in("reservation_id", reservationIds);
+
+  if (error) {
+    console.error("[clients] Error obteniendo pagos:", error.message);
+    return paid;
+  }
+
+  for (const row of data ?? []) {
+    const id = String(row.reservation_id);
+    paid.set(id, (paid.get(id) ?? 0) + Number(row.monto));
+  }
+  return paid;
+}
+
 export async function getClientsByOwner() { 
   const supabase = await createClient();
   const {
@@ -61,6 +89,11 @@ export async function getClientsByOwner() {
    "finalizada",
  ];
 
+  const paidByReservation = await getPaidAmountByReservation(
+    supabase,
+    reservaciones.map((reservacion) => String(reservacion.id)),
+  );
+
   const clientsMap = new Map<string, ClienteAcumulador>();
 
   for (const reservacion of reservaciones) {
@@ -93,7 +126,7 @@ export async function getClientsByOwner() {
 
     client.reservas++;
 
-    client.totalPagado += Number(reservacion.total_price);
+    client.totalPagado += paidByReservation.get(String(reservacion.id)) ?? 0;
 
     if (new Date(reservacion.created_at) > new Date(client.ultimaReserva)) {
       client.ultimaReserva = reservacion.created_at;
@@ -102,7 +135,11 @@ export async function getClientsByOwner() {
   }
 
   for (const client of clientsMap.values()) {
-    if (client.reservationStatuses.includes("activa")) {
+    if (
+      client.reservationStatuses.some(
+        (status) => status === "activa" || status === "confirmada",
+      )
+    ) {
       client.estado = "activo";
     } else if (
       client.reservationStatuses.every((status) => status === "finalizada")
@@ -113,12 +150,8 @@ export async function getClientsByOwner() {
     }
   }
 
-  console.log("===== CLIENTES ADMIN =====");
-  console.log("RESERVACIONES:", reservaciones);
-  console.log("CLIENTES MAP:", Array.from(clientsMap.values()));
-  console.log("==========================");
-
   return Array.from(clientsMap.values()).map(
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     ({ reservationStatuses, ...client }) => client,
   );
 }
@@ -200,20 +233,28 @@ export async function getClientDetails(clientId: string) {
 
   const firstReservation = reservations[0];
 
+  const paidByReservation = await getPaidAmountByReservation(
+    supabase,
+    reservations.map((reservation) => String(reservation.id)),
+  );
+
   const client: CLIENTE = {
     id: firstReservation.client_id,
     nombre: firstReservation.client_name,
     email: firstReservation.client_email ?? "",
     telefono: firstReservation.client_phone ?? "",
     tipo: "registrado",
-    estado: reservations.some((r) => r.status === "activa")
+    estado: reservations.some(
+      (r) => r.status === "activa" || r.status === "confirmada",
+    )
       ? "activo"
       : reservations.every((r) => r.status === "finalizada")
         ? "finalizado"
         : "pendiente_pago",
     reservas: reservations.length,
     totalPagado: reservations.reduce(
-      (total, reservation) => total + Number(reservation.total_price),
+      (total, reservation) =>
+        total + (paidByReservation.get(String(reservation.id)) ?? 0),
       0,
     ),
     ultimaReserva: firstReservation.created_at,

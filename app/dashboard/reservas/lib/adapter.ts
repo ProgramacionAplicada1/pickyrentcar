@@ -11,24 +11,30 @@ import type { ReservationRow, ReservationStats } from "@/services/reservations"
 // Status mapping (DB lowercase → mock Spanish capitalized)
 // ============================================================================
 
-type AdaptedStatus = Extract<
-  AdaptedReservationStatus,
-  "Pendiente" | "Pendiente de pago" | "Activa" | "Finalizada" | "Cancelada"
->
+export type ReservationPaymentInfo = {
+  estado: "pendiente" | "completado" | "fallido" | "reembolsado"
+  metodo_pago: string
+}
 
-function adaptStatus(dbStatus: string): AdaptedStatus {
+function adaptStatus(
+  dbStatus: string,
+  latestPayment: ReservationPaymentInfo | undefined,
+): AdaptedReservationStatus {
   switch (dbStatus) {
     case "pendiente":
       return "Pendiente";
     case "pendiente_pago":
-      return "Pendiente de pago";
+      return latestPayment?.estado === "pendiente"
+        ? "Pago en revisión"
+        : "Por pagar";
     case "confirmada":
+      return "Confirmada";
     case "activa":
-      return "Activa";
+      return "En curso";
     case "finalizada":
       return "Finalizada";
     case "cancelada":
-      return "Cancelada"; 
+      return "Cancelada";
     default:
       return "Pendiente";
   }
@@ -38,16 +44,34 @@ function adaptStatus(dbStatus: string): AdaptedStatus {
 // Reservation adapter
 // ============================================================================
 
-function adaptPaymentStatus(dbStatus: string): PaymentStatus {
-  if (dbStatus === "pendiente") return "Pendiente";
-  if (dbStatus === "pendiente_pago") return "Pendiente";
-  if (dbStatus === "cancelada") return "Pendiente";
-  return "Pagado";
+function adaptPaymentStatus(
+  latestPayment: ReservationPaymentInfo | undefined,
+): PaymentStatus {
+  switch (latestPayment?.estado) {
+    case "completado":
+      return "Pagado";
+    case "pendiente":
+      return "En revisión";
+    case "fallido":
+      return "Rechazado";
+    default:
+      return "Pendiente";
+  }
 }
 
-const DEFAULT_PAYMENT_METHOD: PaymentMethod = "Efectivo"
+function adaptPaymentMethod(
+  latestPayment: ReservationPaymentInfo | undefined,
+): PaymentMethod | "—" {
+  const method = latestPayment?.metodo_pago;
+  return method === "Efectivo" || method === "Transferencia" || method === "Tarjeta"
+    ? method
+    : "—";
+}
 
-export function adaptReservation(row: ReservationRow): Reservation {
+export function adaptReservation(
+  row: ReservationRow,
+  latestPayment?: ReservationPaymentInfo,
+): Reservation {
   return {
     id: row.id,
     numeroReserva: row.numero,
@@ -77,9 +101,9 @@ export function adaptReservation(row: ReservationRow): Reservation {
     fechaFin: row.end_date,
     dias: row.days,
     precio: Number(row.total_price),
-    estado: adaptStatus(row.status),
-    metodoPago: DEFAULT_PAYMENT_METHOD,
-    estadoPago: adaptPaymentStatus(row.status),
+    estado: adaptStatus(row.status, latestPayment),
+    metodoPago: adaptPaymentMethod(latestPayment),
+    estadoPago: adaptPaymentStatus(latestPayment),
     ubicacion: row.location ?? "—",
   }
 }
@@ -109,7 +133,7 @@ const STAT_META: Record<StatKey, Omit<AdaptedReservationStat, "value">> = {
   },
   activas: {
     key: "activas",
-    label: "Activas",
+    label: "Pagadas vigentes",
     accent: "border-emerald-500/30",
     bg: "bg-emerald-500/10",
     text: "text-emerald-500",

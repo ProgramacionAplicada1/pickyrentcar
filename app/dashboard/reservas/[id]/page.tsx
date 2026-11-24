@@ -21,7 +21,15 @@ import { StatusBadge } from "@/components/vehicles/status-badge"
 import { ReservationStatusActions } from "../components/reservation-status-actions"
 import { ReservationStatusBadge } from "../components/reservation-status-badge"
 import { formatCurrency } from "@/lib/utils/formatCurrency"
-import { getReservationById, getReservationsWithPaymentStatus} from "@/services/reservations";
+import { getReservationById } from "@/services/reservations"
+import { listPagosByReservation, type PagoEstado } from "@/services/payments"
+
+const PAGO_ESTADO_LABEL: Record<PagoEstado, string> = {
+  pendiente: "En revisión",
+  completado: "Pagado",
+  fallido: "Rechazado",
+  reembolsado: "Reembolsado",
+}
 
 
 
@@ -38,8 +46,15 @@ export default async function ReservationDetailPage({ params }: Props) {
   const reservation = await getReservationById(id)
   if (!reservation) notFound()
   
-  const paidReservationIds = await getReservationsWithPaymentStatus();
-  const hasCompletedPayment = paidReservationIds.has(reservation.id);
+  const pagos = await listPagosByReservation(reservation.id)
+  const latestPago = pagos[0] ?? null
+  const paymentInReview =
+    reservation.status === "pendiente_pago" && latestPago?.estado === "pendiente"
+  const paymentStateLabel = latestPago
+    ? `${PAGO_ESTADO_LABEL[latestPago.estado]} · ${latestPago.metodo_pago}`
+    : reservation.status === "pendiente"
+      ? "Aún no se solicita"
+      : "Sin pago reportado"
 
   const cover = reservation.vehicle?.image_urls[0] ?? null
 
@@ -162,14 +177,21 @@ export default async function ReservationDetailPage({ params }: Props) {
                 />
                 <DataLine
                   icon={Dollar01Icon}
-                  label="Estado"
-                  value="Pendiente de pago"
+                  label="Pago"
+                  value={paymentStateLabel}
                 />
               </div>
-              <p className="text-xs text-muted-foreground">
-                El registro del pago del anticipo se habilitará en una próxima
-                iteración.
-              </p>
+              {latestPago?.referencia ? (
+                <p className="text-xs text-muted-foreground">
+                  Referencia:{" "}
+                  <span className="font-mono">{latestPago.referencia}</span>
+                </p>
+              ) : null}
+              {latestPago?.estado === "fallido" && latestPago.motivo_rechazo ? (
+                <p className="text-xs text-destructive">
+                  Motivo del rechazo: {latestPago.motivo_rechazo}
+                </p>
+              ) : null}
             </section>
 
             {reservation.notes && (
@@ -193,7 +215,8 @@ export default async function ReservationDetailPage({ params }: Props) {
               <ReservationStatusActions
                 reservationId={reservation.id}
                 status={reservation.status}
-                hasCompletedPayment={hasCompletedPayment}
+                paymentInReview={paymentInReview}
+                paymentDueAt={reservation.payment_due_at}
               />
             </section>
 

@@ -2,8 +2,6 @@
 
 import * as React from "react"
 import Link from "next/link"
-import { HugeiconsIcon } from "@hugeicons/react"
-import { Car01Icon } from "@hugeicons/core-free-icons"
 
 import {
   Card,
@@ -21,10 +19,7 @@ import {
 import { StatusBadge } from "@/components/vehicles/status-badge"
 import { DeleteVehicleDialog } from "@/components/vehicles/delete-vehicle-dialog"
 import { HoverImageCarousel } from "@/components/vehicles/hover-image-carousel"
-import {
-  type VehicleRow,
-  getCoverUrl,
-} from "@/components/vehicles/vehicle-row"
+import { type VehicleRow } from "@/components/vehicles/vehicle-row"
 
 export type { VehicleRow } from "@/components/vehicles/vehicle-row"
 
@@ -34,7 +29,6 @@ type Props = {
 
 export function VehicleCard({ vehicle }: Props) {
   const [dialogOpen, setDialogOpen] = React.useState(false)
-  const cover = getCoverUrl(vehicle)
 
   return (
     <Card className="group relative gap-0 overflow-hidden rounded-2xl p-0 transition-shadow hover:shadow-md">

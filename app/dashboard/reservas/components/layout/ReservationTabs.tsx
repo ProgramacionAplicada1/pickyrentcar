@@ -2,8 +2,10 @@
 
 const tabs = [
   "Todas",
-  "Activas",
   "Pendientes",
+  "Por pagar",
+  "Confirmadas",
+  "En curso",
   "Finalizadas",
   "Canceladas",
   "Hoy",

@@ -15,6 +15,7 @@ import {
 import { FaCarSide } from "react-icons/fa"
 
 import { MyReservationStatus } from "@/components/public/my-reservation-status"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
@@ -22,6 +23,10 @@ import { BackButton } from "@/components/ui/back-button"
 import { formatCurrency } from "@/lib/utils/formatCurrency"
 import { getCurrentUser } from "@/services/auth"
 import { getMyReservationById } from "@/services/my-reservations"
+import {
+  RESERVATION_STATUS_LABELS,
+  isReservationStatus,
+} from "@/lib/vehicles/reservation-status"
 
 export const metadata: Metadata = {
   title: "Detalle de reserva · PickyRentCar",
@@ -57,14 +62,18 @@ function formatCreatedAt(value: string) {
 
 const STATUS_COPY: Record<string, string> = {
   pendiente:
-    "Recibimos tu solicitud. El equipo de PickyRentCar debe validar los próximos pasos antes de confirmarla.",
+    "Recibimos tu solicitud. El propietario debe aceptarla; te avisaremos aquí cuando puedas pagar.",
   pendiente_pago:
-    "Tu reserva fue aceptada. Realiza el pago para activar tu reserva.",
+    "Tu reserva fue aceptada y tus fechas están apartadas. Págala antes del plazo para confirmarla.",
+  pago_en_revision:
+    "Recibimos tu pago. El propietario lo está verificando para confirmar tu reserva.",
+  confirmada:
+    "Tu reserva está pagada y confirmada. Presenta tu número de reserva al recoger el vehículo.",
   activa:
-    "Tu renta está activa actualmente. Si necesitas asistencia, contacta al equipo de PickyRentCar.",
+    "Tu renta está en curso. Si necesitas asistencia, contacta al propietario del vehículo.",
   finalizada:
     "Esta renta ya fue finalizada y permanece disponible en tu historial.",
-  cancelada: "Esta reserva fue cancelada y ya no está activa.",
+  cancelada: "Esta reserva fue cancelada.",
 }
 
 export default async function MyReservationDetailPage({ params }: Props) {
@@ -77,6 +86,13 @@ export default async function MyReservationDetailPage({ params }: Props) {
   const reservation = await getMyReservationById(id)
 
   if (!reservation) notFound()
+
+  const latestPayment = reservation.latest_payment
+  const paymentInReview =
+    reservation.status === "pendiente_pago" && latestPayment?.estado === "pendiente"
+  const canPay = reservation.status === "pendiente_pago" && !paymentInReview
+  const rejectedPayment =
+    canPay && latestPayment?.estado === "fallido" ? latestPayment : null
 
   const vehicle = reservation.vehicle
   const image = vehicle?.image_urls[0]
@@ -105,13 +121,38 @@ export default async function MyReservationDetailPage({ params }: Props) {
             Registrada el {formatCreatedAt(reservation.created_at)}
           </p>
         </div>
-        <MyReservationStatus status={reservation.status} />
+        <MyReservationStatus
+          status={reservation.status}
+          paymentInReview={paymentInReview}
+        />
       </div>
 
-      <div className="rounded-2xl border bg-muted/30 px-4 py-3 text-sm leading-6 text-muted-foreground">
-        {STATUS_COPY[reservation.status] ??
-          "Consulta aquí la información actualizada de tu reserva."}
-      </div>
+      <Alert>
+        <AlertTitle>
+          {paymentInReview
+            ? "Pago en revisión"
+            : isReservationStatus(reservation.status)
+              ? RESERVATION_STATUS_LABELS[reservation.status]
+              : "Estado de la reserva"}
+        </AlertTitle>
+        <AlertDescription>
+          {STATUS_COPY[paymentInReview ? "pago_en_revision" : reservation.status] ??
+            "Consulta aquí la información actualizada de tu reserva."}
+          {canPay && reservation.payment_due_at
+            ? ` Plazo para pagar: ${formatCreatedAt(reservation.payment_due_at)}`
+            : null}
+        </AlertDescription>
+      </Alert>
+
+      {rejectedPayment ? (
+        <Alert variant="destructive">
+          <AlertTitle>Tu pago fue rechazado</AlertTitle>
+          <AlertDescription>
+            {rejectedPayment.motivo_rechazo ?? "El propietario no pudo verificarlo."}{" "}
+            Puedes volver a pagar desde “Pagar ahora”.
+          </AlertDescription>
+        </Alert>
+      ) : null}
 
       <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
         <div className="flex flex-col gap-6">
@@ -267,7 +308,7 @@ export default async function MyReservationDetailPage({ params }: Props) {
                 </span>
               </div>
 
-              {reservation.status === "pendiente_pago" && (
+              {canPay && (
                 <Button
                   className="mt-2 rounded-full"
                   nativeButton={false}

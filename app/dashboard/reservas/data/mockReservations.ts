@@ -1,11 +1,13 @@
 export type AdaptedReservationStatus =
-  | "Activa"
   | "Pendiente"
-  | "Pendiente de pago"
+  | "Por pagar"
+  | "Pago en revisión"
+  | "Confirmada"
+  | "En curso"
   | "Finalizada"
   | "Cancelada";
 
-export type PaymentStatus = "Pagado" | "Pendiente" | "Parcial";
+export type PaymentStatus = "Pagado" | "Pendiente" | "En revisión" | "Rechazado";
 
 export type PaymentMethod = "Tarjeta" | "Efectivo" | "Transferencia";
 
@@ -35,7 +37,7 @@ export interface Reservation {
 
   estado: AdaptedReservationStatus;
 
-  metodoPago: PaymentMethod;
+  metodoPago: PaymentMethod | "—";
   estadoPago: PaymentStatus;
 
   ubicacion: string;

@@ -1,16 +1,28 @@
 "use client";
+
 import { useRouter } from "next/navigation";
 import * as React from "react";
+import { toast } from "sonner";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
-  ArrowRight01Icon,
-  Calendar01Icon,
+  Cancel01Icon,
   CheckmarkCircle02Icon,
   Flag01Icon,
-  Loading03Icon,
-  Time01Icon,
+  Key01Icon,
 } from "@hugeicons/core-free-icons";
 
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import {
@@ -19,6 +31,8 @@ import {
 } from "@/app/dashboard/reservas/actions";
 import {
   RESERVATION_STATUS_LABELS,
+  canCancelReservation,
+  isReservationStatus,
   nextReservationStatus,
   type ReservationStatus,
 } from "@/lib/vehicles/reservation-status";
@@ -26,41 +40,57 @@ import {
 type Props = {
   reservationId: string;
   status: ReservationStatus | string;
-  hasCompletedPayment: boolean;
+  /** Hay un pago reportado esperando revisión. */
+  paymentInReview: boolean;
+  paymentDueAt: string | null;
 };
+
+const ADVANCE_COPY: Partial<
+  Record<ReservationStatus, { label: string; icon: typeof CheckmarkCircle02Icon }>
+> = {
+  pendiente: { label: "Aceptar reserva", icon: CheckmarkCircle02Icon },
+  confirmada: { label: "Entregar vehículo", icon: Key01Icon },
+  activa: { label: "Finalizar renta", icon: Flag01Icon },
+};
+
+function formatDeadline(value: string) {
+  return new Date(value).toLocaleString("es-DO", {
+    day: "numeric",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
 
 export function ReservationStatusActions({
   reservationId,
-  hasCompletedPayment,
   status,
+  paymentInReview,
+  paymentDueAt,
 }: Props) {
   const router = useRouter();
   const [advancePending, setAdvancePending] = React.useState(false);
   const [cancelPending, setCancelPending] = React.useState(false);
 
-  const safeStatus: ReservationStatus =
-    status === "pendiente" ||
-    status === "pendiente_pago" ||
-    status === "activa" ||
-    status === "finalizada" ||
-    status === "cancelada"
-      ? status
-      : "pendiente";
-
+  const safeStatus: ReservationStatus = isReservationStatus(status)
+    ? status
+    : "pendiente";
   const next = nextReservationStatus(safeStatus);
+  const advance = ADVANCE_COPY[safeStatus];
 
   async function handleAdvance() {
     setAdvancePending(true);
-
     try {
       const result = await advanceReservationStatus(reservationId);
-
-      console.log("RESULTADO AVANCE:", result);
-
       if (result.ok) {
+        toast.success(
+          safeStatus === "pendiente"
+            ? "Reserva aceptada. El cliente tiene 48 h para pagar."
+            : "Estado actualizado.",
+        );
         router.refresh();
       } else {
-        alert(result.error);
+        toast.error(result.error ?? "No se pudo avanzar la reserva.");
       }
     } finally {
       setAdvancePending(false);
@@ -69,14 +99,13 @@ export function ReservationStatusActions({
 
   async function handleCancel() {
     setCancelPending(true);
-
     try {
       const result = await cancelReservation(reservationId);
-
       if (result.ok) {
+        toast.success("Reserva cancelada.");
         router.refresh();
       } else {
-        console.error(result.error);
+        toast.error(result.error ?? "No se pudo cancelar la reserva.");
       }
     } finally {
       setCancelPending(false);
@@ -85,84 +114,97 @@ export function ReservationStatusActions({
 
   if (safeStatus === "cancelada" || safeStatus === "finalizada") {
     return (
-      <p className="text-sm text-muted-foreground italic">
-        Esta reserva está{" "}
-        {safeStatus === "cancelada" ? "cancelada" : "finalizada"}. No hay más
-        acciones disponibles.
+      <p className="text-sm text-muted-foreground">
+        Esta reserva está {RESERVATION_STATUS_LABELS[safeStatus].toLowerCase()}.
+        No hay más acciones disponibles.
       </p>
     );
   }
 
-  const advanceIcon: React.ComponentProps<typeof HugeiconsIcon>["icon"] =
-    safeStatus === "pendiente"
-      ? CheckmarkCircle02Icon
-      : safeStatus === "pendiente_pago"
-        ? Time01Icon
-        : Flag01Icon;
-  const advanceLabel =
-    safeStatus === "pendiente"
-      ? "Aceptar reserva"
-      : safeStatus === "pendiente_pago"
-        ? "Marcar como activa"
-        : "Marcar como finalizada";
-
   return (
-    <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-      {next && (
-        <Button
-          type="button"
-          variant="default"
-          size="lg"
-          className="rounded-full"
-          disabled={
-            advancePending ||
-            cancelPending ||
-            (safeStatus === "pendiente_pago" && !hasCompletedPayment)
-          }
-          onClick={handleAdvance}
-        >
-          {advancePending ? (
-            <Spinner />
-          ) : (
-            <HugeiconsIcon icon={advanceIcon} strokeWidth={1.75} />
-          )}
-          {advanceLabel}
-          <span className="hidden text-xs opacity-70 sm:inline">
-            ({RESERVATION_STATUS_LABELS[next]})
-          </span>
-        </Button>
-      )}
+    <div className="flex flex-col gap-3">
+      {safeStatus === "pendiente_pago" ? (
+        <Alert>
+          <AlertTitle>
+            {paymentInReview ? "Pago por revisar" : "Esperando el pago del cliente"}
+          </AlertTitle>
+          <AlertDescription>
+            {paymentInReview
+              ? "El cliente informó un pago. Revísalo en Pagos para confirmar la reserva."
+              : `Las fechas están apartadas${
+                  paymentDueAt ? ` hasta el ${formatDeadline(paymentDueAt)}` : ""
+                }. Si el cliente no paga a tiempo, la reserva se cancela sola.`}
+          </AlertDescription>
+        </Alert>
+      ) : null}
 
-      <Button
-        type="button"
-        variant="outline"
-        size="lg"
-        className="rounded-full"
-        disabled={advancePending || cancelPending}
-        onClick={handleCancel}
-      >
-        {cancelPending ? (
-          <Spinner />
-        ) : (
-          <HugeiconsIcon icon={Loading03Icon} strokeWidth={1.75} />
-        )}
-        Cancelar reserva
-      </Button>
+      <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+        {safeStatus === "pendiente_pago" && paymentInReview ? (
+          <Button
+            className="rounded-full"
+            size="lg"
+            nativeButton={false}
+            render={<a href="/dashboard/pagos" />}
+          >
+            Revisar pago
+          </Button>
+        ) : null}
 
-      <p className="flex w-full items-center gap-2 text-xs text-muted-foreground sm:w-auto">
-        <HugeiconsIcon
-          icon={Calendar01Icon}
-          strokeWidth={1.75}
-          className="size-3.5"
-        />
-        Tip: el avance del pago se confirmará cuando se registre el pago del
-        cliente (próximamente).
-        <HugeiconsIcon
-          icon={ArrowRight01Icon}
-          strokeWidth={1.75}
-          className="hidden size-3 sm:inline"
-        />
-      </p>
+        {next && advance ? (
+          <Button
+            type="button"
+            size="lg"
+            className="rounded-full"
+            disabled={advancePending || cancelPending}
+            onClick={handleAdvance}
+          >
+            {advancePending ? (
+              <Spinner data-icon="inline-start" />
+            ) : (
+              <HugeiconsIcon icon={advance.icon} strokeWidth={1.75} data-icon="inline-start" />
+            )}
+            {advance.label}
+          </Button>
+        ) : null}
+
+        {canCancelReservation(safeStatus) ? (
+          <AlertDialog>
+            <AlertDialogTrigger
+              render={
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="lg"
+                  className="rounded-full"
+                  disabled={advancePending || cancelPending}
+                />
+              }
+            >
+              {cancelPending ? (
+                <Spinner data-icon="inline-start" />
+              ) : (
+                <HugeiconsIcon icon={Cancel01Icon} strokeWidth={1.75} data-icon="inline-start" />
+              )}
+              Cancelar reserva
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Cancelar reserva</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Las fechas quedarán libres para otros clientes. Esta acción no
+                  se puede deshacer.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Volver</AlertDialogCancel>
+                <AlertDialogAction variant="destructive" onClick={handleCancel}>
+                  Cancelar reserva
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        ) : null}
+      </div>
     </div>
   );
 }

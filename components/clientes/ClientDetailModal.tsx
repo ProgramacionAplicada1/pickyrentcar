@@ -1,5 +1,6 @@
 "use client";
 
+import { RESERVATION_STATUS_LABELS } from "@/lib/vehicles/reservation-status";
 import { useEffect } from "react";
 import { FaEnvelope, FaPhoneAlt, FaTimes, FaCar } from "react-icons/fa";
 
@@ -28,17 +29,12 @@ interface ClientDetailModalProps {
   onClose: () => void;
 }
 
-const statusLabels: Record<string, string> = {
-  pendiente: "Pendiente",
-  pendiente_pago: "Pendiente de pago",
-  activa: "Activa",
-  finalizada: "Finalizada",
-  cancelada: "Cancelada",
-};
+const statusLabels: Record<string, string> = RESERVATION_STATUS_LABELS;
 
 const statusStyles: Record<string, string> = {
   pendiente: "border-amber-200 bg-amber-50 text-amber-700",
   pendiente_pago: "border-orange-200 bg-orange-50 text-orange-700",
+  confirmada: "border-teal-200 bg-teal-50 text-teal-700",
   activa: "border-emerald-200 bg-emerald-50 text-emerald-700",
   finalizada: "border-blue-200 bg-blue-50 text-blue-700",
   cancelada: "border-red-200 bg-red-50 text-red-700",

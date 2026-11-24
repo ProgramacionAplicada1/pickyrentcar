@@ -52,7 +52,8 @@ export default async function MyReservationsPage() {
   ).length
 
   const active = reservations.filter(
-    (reservation) => reservation.status === "activa",
+    (reservation) =>
+      reservation.status === "confirmada" || reservation.status === "activa",
   ).length
 
   return (
@@ -145,7 +146,13 @@ export default async function MyReservationsPage() {
                           </p>
                         )}
                       </div>
-                      <MyReservationStatus status={reservation.status} />
+                      <MyReservationStatus
+                        status={reservation.status}
+                        paymentInReview={
+                          reservation.status === "pendiente_pago" &&
+                          reservation.latest_payment?.estado === "pendiente"
+                        }
+                      />
                     </div>
 
                     <div className="grid gap-3 text-sm sm:grid-cols-2 lg:grid-cols-3">

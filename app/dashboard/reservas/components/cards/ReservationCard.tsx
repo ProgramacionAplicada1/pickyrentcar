@@ -8,7 +8,6 @@ import ReservationClient from "./ReservationClient";
 import ReservationBooking from "./ReservationBooking";
 import ReservationPayment from "./ReservationPayment";
 import ReservationActions from "./ReservationActions";
-import { ReservationStatusActions } from "../reservation-status-actions";
 
 
 interface ReservationCardProps {
@@ -18,9 +17,11 @@ interface ReservationCardProps {
 }
 
 const borderColors = {
-  Activa: "border-l-emerald-500",
+  "En curso": "border-l-emerald-500",
+  Confirmada: "border-l-teal-500",
   Pendiente: "border-l-amber-500",
-  "Pendiente de pago": "border-l-orange-500",
+  "Por pagar": "border-l-orange-500",
+  "Pago en revisión": "border-l-violet-500",
   Finalizada: "border-l-blue-500",
   Cancelada: "border-l-red-500",
 };

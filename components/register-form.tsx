@@ -19,7 +19,6 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
 import { createClient } from "@/lib/supabase/client"
-import { GoogleSignInButton } from "@/components/google-signin-button"
 
 type FieldErrors = {
   fullName?: string
@@ -116,6 +115,9 @@ export function RegisterForm() {
       options: {
         data: {
           full_name: fullName.trim(),
+          // Registro explícito de dueño de flota. Sin esto, la BD crea
+          // un cliente (ver supabase/migrations/020_default_role_cliente.sql).
+          role: "admin",
         },
       },
     })
@@ -288,10 +290,6 @@ export function RegisterForm() {
         {isPending ? "Creando cuenta…" : "Crear cuenta"}
       </Button>
 
-      <Divider>O</Divider>
-
-      <GoogleSignInButton />
-
       <p className="text-center text-sm text-muted-foreground">
         ¿Ya tienes una cuenta?{" "}
         <Link
@@ -366,17 +364,5 @@ function PasswordToggle({
         className="size-[18px]"
       />
     </button>
-  )
-}
-
-function Divider({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="flex items-center gap-3 py-1">
-      <div className="h-px flex-1 bg-border" />
-      <span className="text-[11px] font-medium tracking-[0.08em] text-muted-foreground uppercase">
-        {children}
-      </span>
-      <div className="h-px flex-1 bg-border" />
-    </div>
   )
 }

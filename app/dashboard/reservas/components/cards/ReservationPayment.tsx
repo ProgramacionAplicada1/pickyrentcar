@@ -9,12 +9,12 @@ import {
 
 import { formatCurrency } from "@/lib/utils/formatCurrency";
 
-type PaymentStatus = "Pagado" | "Pendiente" | "Parcial";
+import type {
+  PaymentMethod as BasePaymentMethod,
+  PaymentStatus,
+} from "../../data/mockReservations";
 
-type PaymentMethod =
-  | "Tarjeta"
-  | "Efectivo"
-  | "Transferencia";
+type PaymentMethod = BasePaymentMethod | "—";
 
 interface ReservationPaymentProps {
   precio: number;
@@ -30,11 +30,18 @@ const paymentConfig = {
     percentage: 100,
   },
 
-  Parcial: {
+  "En revisión": {
     color: "text-amber-700",
     badge: "bg-amber-50 border-amber-200",
     progress: "bg-amber-500",
     percentage: 50,
+  },
+
+  Rechazado: {
+    color: "text-red-700",
+    badge: "bg-red-50 border-red-200",
+    progress: "bg-red-500",
+    percentage: 0,
   },
 
   Pendiente: {
@@ -59,6 +66,9 @@ function PaymentIcon({
 
     case "Transferencia":
       return <FaUniversity />;
+
+    default:
+      return <FaMoneyCheckAlt />;
   }
 }
 

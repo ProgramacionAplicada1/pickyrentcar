@@ -5,7 +5,6 @@ import {
   updateVehicle as updateVehicleService,
   deleteVehicle as deleteVehicleService,
   type VehicleActionResult,
-  type VehicleFieldErrors,
 } from "@/services/vehicles"
 
 export type { VehicleActionResult, VehicleFieldErrors } from "@/services/vehicles"

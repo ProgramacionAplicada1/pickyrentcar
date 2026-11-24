@@ -12,15 +12,25 @@ const statusConfig: Record<
     badge: string;
   }
 > = {
-  Activa: {
-    text: "Activa",
+  "En curso": {
+    text: "En curso",
     dot: "bg-emerald-500",
     badge: "border border-emerald-200 bg-emerald-50 text-emerald-700",
   },
-  "Pendiente de pago": {
-    text: "Pendiente de pago",
+  Confirmada: {
+    text: "Confirmada",
+    dot: "bg-teal-500",
+    badge: "border border-teal-200 bg-teal-50 text-teal-700",
+  },
+  "Por pagar": {
+    text: "Por pagar",
     dot: "bg-orange-500",
     badge: "border border-orange-200 bg-orange-50 text-orange-700",
+  },
+  "Pago en revisión": {
+    text: "Pago en revisión",
+    dot: "bg-violet-500",
+    badge: "border border-violet-200 bg-violet-50 text-violet-700",
   },
   Pendiente: {
     text: "Pendiente",

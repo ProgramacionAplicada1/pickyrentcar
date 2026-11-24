@@ -1,49 +1,47 @@
-import type { Metadata } from "next";
-import { notFound, redirect } from "next/navigation";
-import { FiArrowLeft, FiCopy } from "react-icons/fi";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { BackButton } from "@/components/ui/back-button";
-import { getCurrentUser } from "@/services/auth";
-import { getMyReservationById } from "@/services/my-reservations";
-import { formatCurrency } from "@/lib/utils/formatCurrency";
-import PaymentReportButton from "@/components/public/boton-transferencia";
+import type { Metadata } from "next"
+import { notFound, redirect } from "next/navigation"
+import { FiArrowLeft } from "react-icons/fi"
 
+import { CopyButton } from "@/components/public/copy-button"
+import PaymentReportButton from "@/components/public/boton-transferencia"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { BackButton } from "@/components/ui/back-button"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card"
+import { formatCurrency } from "@/lib/utils/formatCurrency"
+import { getCurrentUser } from "@/services/auth"
+import { getMyReservationById } from "@/services/my-reservations"
+import { getPaymentDetails } from "@/services/payments"
 
 export const metadata: Metadata = { title: "Transferencia bancaria · PickyRentCar" }
 
 type Props = { params: Promise<{ id: string }> }
 
 export default async function TransferPaymentPage({ params }: Props) {
-  const user = await getCurrentUser();
-  const { id } = await params;
+  const { id } = await params
+  const user = await getCurrentUser()
 
   if (!user) {
-    redirect(
-      `/login?next=${encodeURIComponent(
-        `/mis-reservas/${id}/pagar/transferencia`,
-      )}`,
-    );
+    redirect(`/login?next=${encodeURIComponent(`/mis-reservas/${id}/pagar/transferencia`)}`)
   }
-
-
-
   if (user.role === "admin") {
-      redirect("/dashboard")
+    redirect("/dashboard")
   }
-
-
 
   const reservation = await getMyReservationById(id)
-
-
-  if (!reservation) {
-    notFound()
-  }
-
-
+  if (!reservation) notFound()
   if (reservation.status !== "pendiente_pago") {
     redirect(`/mis-reservas/${id}`)
   }
+
+  const details = await getPaymentDetails(reservation.id)
+  const hasBankDetails = Boolean(details?.banco && details?.numero_cuenta)
+  const alreadyReported = reservation.latest_payment?.estado === "pendiente"
 
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-col gap-6 px-4 py-8 sm:px-6 sm:py-12">
@@ -61,29 +59,23 @@ export default async function TransferPaymentPage({ params }: Props) {
         <p className="font-mono text-sm font-semibold tracking-wider text-muted-foreground">
           {reservation.numero}
         </p>
-
         <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">
           Transferencia bancaria
         </h1>
-
         <p className="text-sm leading-6 text-muted-foreground sm:text-base">
-          Realiza la transferencia por el monto exacto de tu reserva utilizando
-          los datos bancarios indicados debajo.
+          Transfiere el monto exacto a la cuenta del propietario del vehículo y
+          luego infórmanos el número de referencia.
         </p>
       </div>
 
       <Card className="rounded-3xl">
         <CardHeader>
           <CardTitle>Monto a transferir</CardTitle>
+          <CardDescription>Total de tu reserva.</CardDescription>
         </CardHeader>
-
         <CardContent>
           <p className="text-3xl font-bold tracking-tight">
             {formatCurrency(reservation.total_price)}
-          </p>
-
-          <p className="mt-2 text-sm text-muted-foreground">
-            Este es el monto total de tu reserva.
           </p>
         </CardContent>
       </Card>
@@ -91,67 +83,69 @@ export default async function TransferPaymentPage({ params }: Props) {
       <Card className="rounded-3xl">
         <CardHeader>
           <CardTitle>Datos bancarios</CardTitle>
+          <CardDescription>
+            Cuenta del propietario del vehículo.
+          </CardDescription>
         </CardHeader>
-
-        <CardContent className="flex flex-col gap-4">
-          <BankDetail label="Banco" value="PENDIENTE DE CONFIGURAR" />
-          <BankDetail label="Titular" value="PickyRentCar" />
-          <BankDetail
-            label="Número de cuenta"
-            value="PENDIENTE DE CONFIGURAR"
-          />
-          <BankDetail label="Tipo de cuenta" value="PENDIENTE DE CONFIGURAR" />
-
-          <div className="rounded-2xl bg-muted/50 p-4">
-            <p className="text-sm font-medium">Importante</p>
-
-            <p className="mt-1 text-sm leading-6 text-muted-foreground">
-              Despues de realizar la transferencia, informa al administrador. La
-              reserva permanecerá pendiente de pago hasta que el administrador
-              confirme que recibió el dinero.
-            </p>
-          </div>
+        <CardContent className="flex flex-col gap-3">
+          {hasBankDetails && details ? (
+            <>
+              <BankDetail label="Banco" value={details.banco} />
+              <BankDetail label="Titular" value={details.titular_cuenta} />
+              <BankDetail label="Número de cuenta" value={details.numero_cuenta} copyable />
+              <BankDetail label="Tipo de cuenta" value={details.tipo_cuenta} />
+            </>
+          ) : (
+            <Alert>
+              <AlertTitle>Datos bancarios no disponibles</AlertTitle>
+              <AlertDescription>
+                El propietario aún no configuró su cuenta bancaria. Puedes
+                elegir pagar en efectivo al recoger el vehículo o contactar al
+                propietario.
+              </AlertDescription>
+            </Alert>
+          )}
         </CardContent>
       </Card>
 
       <Card className="rounded-3xl">
-        <CardContent className="flex flex-col gap-4 p-6">
-          <div>
-            <h2 className="font-semibold">¿Ya realizaste la transferencia?</h2>
-
-            <p className="mt-1 text-sm leading-6 text-muted-foreground">
-              El administrador verificara la transferencia antes de activar tu
-              reserva
-            </p>
-          </div>
-          <PaymentReportButton reservationId={reservation.id} />
+        <CardHeader>
+          <CardTitle>Informar la transferencia</CardTitle>
+          <CardDescription>
+            El propietario verificará el pago y confirmará tu reserva. Mientras
+            lo revisa, tus fechas quedan apartadas.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <PaymentReportButton
+            reservationId={reservation.id}
+            userId={user.id}
+            initiallyReported={alreadyReported}
+          />
         </CardContent>
       </Card>
     </div>
   )
 }
 
-
-
-
-function BankDetail({ label, value }: { label: string; value: string }) {
+function BankDetail({
+  label,
+  value,
+  copyable = false,
+}: {
+  label: string
+  value: string | null
+  copyable?: boolean
+}) {
   return (
     <div className="flex items-center justify-between gap-4 rounded-2xl border p-4">
-      <div>
-        <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+      <div className="min-w-0">
+        <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
           {label}
         </p>
-
-        <p className="mt-1 font-semibold">{value}</p>
+        <p className="mt-1 truncate font-semibold">{value || "—"}</p>
       </div>
-
-      <button
-        type="button"
-        className="flex size-9 shrink-0 items-center justify-center rounded-full border text-muted-foreground transition hover:bg-muted"
-        title={`Copiar ${label.toLowerCase()}`}
-      >
-        <FiCopy className="size-4" />
-      </button>
+      {copyable && value ? <CopyButton value={value} label={label} /> : null}
     </div>
-  );
+  )
 }

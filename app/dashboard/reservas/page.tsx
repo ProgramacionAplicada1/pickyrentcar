@@ -10,19 +10,32 @@ import {
   getReservationsWithPaymentStatus,
   listReservations,
 } from "@/services/reservations"
+import { listPagos } from "@/services/payments"
+import type { ReservationPaymentInfo } from "@/app/dashboard/reservas/lib/adapter"
 
 export const metadata = {
   title: "Reservas · PickyRentCar",
 }
 
 export default async function ReservationsPage() {
-  const [reservations, stats, paidReservationIds] = await Promise.all([
+  const [reservations, stats, paidReservationIds, pagos] = await Promise.all([
     listReservations(),
     getReservationStats(),
     getReservationsWithPaymentStatus(),
+    listPagos(),
   ])
 
-  const adaptedReservations = reservations.map(adaptReservation)
+  // listPagos viene ordenado del más reciente al más antiguo.
+  const latestPaymentByReservation = new Map<string, ReservationPaymentInfo>()
+  for (const pago of pagos) {
+    if (!latestPaymentByReservation.has(pago.reservation_id)) {
+      latestPaymentByReservation.set(pago.reservation_id, pago)
+    }
+  }
+
+  const adaptedReservations = reservations.map((row) =>
+    adaptReservation(row, latestPaymentByReservation.get(row.id)),
+  )
   const adaptedStats = adaptStats(stats)
 
   return (

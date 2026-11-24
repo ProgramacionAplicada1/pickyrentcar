@@ -198,12 +198,12 @@ export async function createPublicReservation(
       fieldErrors,
     };
   }
-  if (end < start) {
+  if (end <= start) {
     return {
       ok: false,
-      error: "La fecha de fin debe ser igual o posterior a la fecha de inicio.",
+      error: "La fecha de fin debe ser posterior a la fecha de inicio.",
       fieldErrors: {
-        end_date: "Debe ser posterior o igual a la fecha de inicio.",
+        end_date: "Debe ser posterior a la fecha de inicio.",
       },
     };
   }
@@ -271,42 +271,65 @@ export async function createPublicReservation(
     };
   }
 
-  const days =
-    Math.round((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+  // Mismo cálculo que ReservationForm (días = noches entre inicio y fin),
+  // para que el total guardado coincida con el que ve el cliente.
+  const days = Math.round(
+    (end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24),
+  );
   const totalPrice = days * Number(vehicle.daily_price);
 
   const year = start.getFullYear();
+  // count_reservations_by_year devuelve el último correlativo usado en el año
+  // (tras la migración 021; antes devolvía un conteo, que se queda corto si se
+  // borró alguna reserva). Aun así reintentamos ante choques del número único
+  // por reservas creadas en paralelo o por la versión antigua del RPC.
   const { data: yearCountData } = await supabase.rpc(
     "count_reservations_by_year",
     { p_year: year },
   );
-  const yearCount = Number(yearCountData ?? 0);
+  const baseSeq = Number(yearCountData ?? 0) + 1;
 
-  const seq = (yearCount ?? 0) + 1;
-  const numero = nextReservationNumber(year, seq);
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
-  // Insert con anon client (policy "Anyone can create reservation" lo permite
-  // para anon y authenticated).
+  const MAX_NUMBER_ATTEMPTS = 25;
+  let numero = "";
+  let insertError: { code?: string; message: string } | null = null;
 
-  const { data: { user } } = await supabase.auth.getUser();
-  
-  const { error: insertError } = await supabase.from("reservations").insert({
-    numero,
-    vehicle_id: vehicleId,
-    client_id: user?.id ?? null,
-    client_name: clientName,
-    client_email: clientEmail || null,
-    client_phone: clientPhone,
-    start_date: startDate,
-    end_date: endDate,
-    days,
-    daily_price: Number(vehicle.daily_price),
-    total_price: totalPrice,
-    status: "pendiente",
-    notes: notes || null,
-  });
+  for (let attempt = 0; attempt < MAX_NUMBER_ATTEMPTS; attempt++) {
+    numero = nextReservationNumber(year, baseSeq + attempt);
+
+    // Insert con el cliente del usuario (policy "Anyone can create
+    // reservation" lo permite para anon y authenticated).
+    const { error } = await supabase.from("reservations").insert({
+      numero,
+      vehicle_id: vehicleId,
+      client_id: user?.id ?? null,
+      client_name: clientName,
+      client_email: clientEmail || null,
+      client_phone: clientPhone,
+      start_date: startDate,
+      end_date: endDate,
+      days,
+      daily_price: Number(vehicle.daily_price),
+      total_price: totalPrice,
+      status: "pendiente",
+      notes: notes || null,
+    });
+
+    insertError = error;
+    const numeroTaken =
+      error?.code === "23505" && error.message.includes("reservations_numero_key");
+    if (!numeroTaken) break;
+  }
 
   if (insertError) {
+    console.error(
+      "[catalog] Error al crear la reserva:",
+      insertError.code,
+      insertError.message,
+    );
     return {
       ok: false,
       error:

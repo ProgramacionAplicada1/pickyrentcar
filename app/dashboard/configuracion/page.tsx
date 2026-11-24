@@ -1,171 +1,158 @@
 "use client"
 
-import { useState } from "react"
+import * as React from "react"
 import { useRouter } from "next/navigation"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { Settings01Icon } from "@hugeicons/core-free-icons"
+import { toast } from "sonner"
+
+import { BankDetailsForm } from "@/components/bank-details-form"
+import { ChangePasswordForm } from "@/components/change-password-form"
+import { Button } from "@/components/ui/button"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card"
+import {
+  Field,
+  FieldDescription,
+  FieldGroup,
+  FieldLabel,
+} from "@/components/ui/field"
+import { Input } from "@/components/ui/input"
+import { Spinner } from "@/components/ui/spinner"
 import { createClient } from "@/lib/supabase/client"
 
 export default function ConfiguracionPage() {
-  const router = useRouter() 
-  
-  
-  const [nombreAdmin, setNombreAdmin] = useState("")
-  const [loadingPerfil, setLoadingPerfil] = useState(false)
-  
-  
-  const [password, setPassword] = useState({ actual: "", nueva: "", confirmar: "" })
-  const [loadingPassword, setLoadingPassword] = useState(false)
+  const router = useRouter()
+  const [nombreAdmin, setNombreAdmin] = React.useState("")
+  const [nameError, setNameError] = React.useState("")
+  const [loadingPerfil, setLoadingPerfil] = React.useState(false)
 
-  
+  async function handleGuardarPerfil(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault()
 
-  const handleGuardarPerfil = async (e: any) => {
-    e.preventDefault()
+    const fullName = nombreAdmin.trim()
+    if (fullName.length < 2) {
+      setNameError("Introduce un nombre válido de al menos 2 caracteres.")
+      return
+    }
+
+    setNameError("")
     setLoadingPerfil(true)
-    
+
     const supabase = createClient()
-    
-    
-    const { error } = await supabase.auth.updateUser({
-      data: { display_name: nombreAdmin } 
-    })
-    
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+
+    if (!user) {
+      setLoadingPerfil(false)
+      toast.error("Tu sesión ha expirado. Inicia sesión de nuevo.")
+      return
+    }
+
+    // getCurrentUser() lee el nombre desde profiles.full_name, así que es
+    // ahí donde debe persistirse para que se vea en el panel.
+    const { error } = await supabase
+      .from("profiles")
+      .update({ full_name: fullName })
+      .eq("id", user.id)
+
     setLoadingPerfil(false)
 
     if (error) {
-      alert("Hubo un error al actualizar el nombre: " + error.message)
-    } else {
-      setNombreAdmin("") 
-      alert("¡Nombre de administrador actualizado con éxito en la base de datos!")
-      
-      
-      router.refresh() 
-    }
-  }
-
-  
-  const handleCambiarPassword = async (e: any) => {
-    e.preventDefault()
-    
-    if (password.nueva !== password.confirmar) {
-      alert("Las contraseñas nuevas no coinciden")
+      toast.error("No pudimos actualizar tu nombre.", {
+        description: error.message,
+      })
       return
     }
-    
-    setLoadingPassword(true)
-    
-    const supabase = createClient()
-    
-    const { error } = await supabase.auth.updateUser({ 
-      password: password.nueva 
-    })
-    
-    setLoadingPassword(false)
 
-    if (error) {
-      alert("Hubo un error al actualizar el nombre: " + error.message)
-    } else {
-      setNombreAdmin("") 
-      alert("¡Nombre de administrador actualizado con éxito en la base de datos!")
-      
-      
-      window.location.reload() 
-    }
+    setNombreAdmin("")
+    toast.success("Nombre actualizado correctamente.")
+    router.refresh()
   }
 
-  
   return (
-    <div className="mx-auto max-w-4xl p-6 md:p-10 w-full">
-      
-      
-      <div className="mb-8 flex items-center gap-4 border-b border-slate-200 pb-6">
-        <div className="inline-flex size-12 items-center justify-center rounded-xl bg-slate-900 text-white shadow-sm">
-          <HugeiconsIcon icon={Settings01Icon} strokeWidth={2} className="size-6" />
+    <div className="mx-auto flex w-full max-w-4xl flex-col gap-8 p-6 md:p-10">
+      <div className="flex items-center gap-4">
+        <div className="inline-flex size-12 items-center justify-center rounded-xl bg-primary text-primary-foreground">
+          <HugeiconsIcon icon={Settings01Icon} strokeWidth={2} />
         </div>
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900">Configuración del Sistema</h1>
-          <p className="text-sm text-slate-500">Administra tus credenciales de acceso a la plataforma.</p>
+          <h1 className="text-2xl font-bold tracking-tight">
+            Configuración del Sistema
+          </h1>
+          <p className="text-sm text-muted-foreground">
+            Administra tus credenciales de acceso a la plataforma.
+          </p>
         </div>
       </div>
 
-      <div className="grid gap-8">
-        
-      
-        <section className="rounded-3xl border border-slate-200 bg-white p-6 md:p-8 shadow-sm">
-          <h2 className="text-lg font-semibold text-slate-900 mb-1">Perfil del Administrador</h2>
-          <p className="text-sm text-slate-500 mb-6">Actualiza el nombre que se muestra en el panel.</p>
-          
-          <form onSubmit={handleGuardarPerfil} className="max-w-md space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Nuevo Nombre de Usuario</label>
-              <input 
-                type="text" 
-                value={nombreAdmin}
-                onChange={(e) => setNombreAdmin(e.target.value)}
-                placeholder="Escribe tu nuevo nombre..."
-                className="w-full rounded-xl border border-slate-300 bg-slate-50 px-4 py-2.5 text-sm outline-none transition-colors focus:border-slate-900 focus:bg-white"
-                required
-              />
-            </div>
-            <button 
-              type="submit" 
-              disabled={loadingPerfil}
-              className="rounded-xl bg-slate-900 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-slate-800 active:scale-95 disabled:opacity-70"
-            >
-              {loadingPerfil ? "Guardando..." : "Guardar cambios"}
-            </button>
-          </form>
-        </section>
-
-        
-        <section className="rounded-3xl border border-slate-200 bg-white p-6 md:p-8 shadow-sm">
-          <h2 className="text-lg font-semibold text-slate-900 mb-1">Seguridad de la Cuenta</h2>
-          <p className="text-sm text-slate-500 mb-6">Asegúrate de usar una contraseña larga y segura.</p>
-          
-          <form onSubmit={handleCambiarPassword} className="max-w-md space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Contraseña Actual</label>
-              <input 
-                type="password" 
-                value={password.actual}
-                onChange={(e) => setPassword({ ...password, actual: e.target.value })}
-                className="w-full rounded-xl border border-slate-300 bg-slate-50 px-4 py-2.5 text-sm outline-none transition-colors focus:border-slate-900 focus:bg-white"
-                required
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Nueva Contraseña</label>
-                <input 
-                  type="password" 
-                  value={password.nueva}
-                  onChange={(e) => setPassword({ ...password, nueva: e.target.value })}
-                  className="w-full rounded-xl border border-slate-300 bg-slate-50 px-4 py-2.5 text-sm outline-none transition-colors focus:border-slate-900 focus:bg-white"
+      <Card>
+        <CardHeader>
+          <CardTitle>Perfil del Administrador</CardTitle>
+          <CardDescription>
+            Actualiza el nombre que se muestra en el panel.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleGuardarPerfil} className="max-w-md">
+            <FieldGroup>
+              <Field data-invalid={nameError ? true : undefined}>
+                <FieldLabel htmlFor="admin-name">
+                  Nuevo nombre de usuario
+                </FieldLabel>
+                <Input
+                  id="admin-name"
+                  value={nombreAdmin}
+                  onChange={(event) => setNombreAdmin(event.currentTarget.value)}
+                  placeholder="Escribe tu nuevo nombre..."
+                  disabled={loadingPerfil}
+                  aria-invalid={nameError ? true : undefined}
                   required
                 />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Confirmar Nueva</label>
-                <input 
-                  type="password" 
-                  value={password.confirmar}
-                  onChange={(e) => setPassword({ ...password, confirmar: e.target.value })}
-                  className="w-full rounded-xl border border-slate-300 bg-slate-50 px-4 py-2.5 text-sm outline-none transition-colors focus:border-slate-900 focus:bg-white"
-                  required
-                />
-              </div>
-            </div>
-            <button 
-              type="submit" 
-              disabled={loadingPassword}
-              className="rounded-xl bg-slate-900 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-slate-800 active:scale-95 disabled:opacity-70"
-            >
-              {loadingPassword ? "Actualizando..." : "Actualizar contraseña"}
-            </button>
+                {nameError ? (
+                  <FieldDescription>{nameError}</FieldDescription>
+                ) : null}
+              </Field>
+              <Field orientation="horizontal">
+                <Button type="submit" disabled={loadingPerfil}>
+                  {loadingPerfil ? <Spinner data-icon="inline-start" /> : null}
+                  {loadingPerfil ? "Guardando..." : "Guardar cambios"}
+                </Button>
+              </Field>
+            </FieldGroup>
           </form>
-        </section>
+        </CardContent>
+      </Card>
 
-      </div>
+      <Card>
+        <CardHeader>
+          <CardTitle>Datos bancarios</CardTitle>
+          <CardDescription>
+            Cuenta donde tus clientes transfieren el pago de sus reservas.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <BankDetailsForm />
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Seguridad de la Cuenta</CardTitle>
+          <CardDescription>
+            Asegúrate de usar una contraseña larga y segura.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <ChangePasswordForm />
+        </CardContent>
+      </Card>
     </div>
   )
 }

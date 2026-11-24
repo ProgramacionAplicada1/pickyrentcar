@@ -2,10 +2,9 @@
 
 import { useState } from "react";
 import { HugeiconsIcon } from "@hugeicons/react";
-import {ViewIcon, MoreHorizontalCircle01Icon, EyeIcon,} from "@hugeicons/core-free-icons";
+import { ViewIcon, MoreHorizontalCircle01Icon } from "@hugeicons/core-free-icons";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger} from "@/components/ui/dropdown-menu";
 import { getClientDetailsAction } from "@/app/dashboard/clientes/actions";
-import { CLIENTE } from "@/services/clients";
 import ClientDetailModal, {type DetalleCliente} from "@/components/clientes/ClientDetailModal";
 
 type Props = { clientId: string | null }
@@ -31,7 +30,6 @@ return (
             if (!clientId) return;
 
             const result = await getClientDetailsAction(clientId);
-            console.log("RESULTADO CLIENTE:", result);
 
             if (!result) return;
 
